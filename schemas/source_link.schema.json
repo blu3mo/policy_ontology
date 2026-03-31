@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "source_link",
+  "type": "object",
+  "required": [
+    "link_id",
+    "event_id",
+    "source_id",
+    "source_title",
+    "source_url",
+    "event_scoped_summary_ja"
+  ],
+  "properties": {
+    "link_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_title": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "publisher": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "published_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event_scoped_summary_ja": {
+      "type": "string"
+    },
+    "why_relevant": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence_snippet": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

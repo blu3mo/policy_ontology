@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "topic",
+    "title",
+    "summary",
+    "event_date_text",
+    "event_type",
+    "confidence"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "event_date_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event_date_start": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event_date_end": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timezone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "places": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "string"
+      ]
+    },
+    "notes_uncertainty": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

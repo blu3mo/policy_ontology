@@ -1,0 +1,1 @@
+{"link_id": "sample_evlink_001", "from_event_id": "sample_evt_001", "to_event_id": "sample_evt_001", "relation_type": "同一案件クラスター", "rationale": "サンプル", "evidence": "サンプル", "confidence": 0.1}

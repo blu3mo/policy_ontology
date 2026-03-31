@@ -1,0 +1,1 @@
+{"link_id": "sample_link_001", "event_id": "sample_evt_001", "source_id": "sample_src_001", "source_title": "サンプル資料", "source_url": "https://example.com/sample", "source_type": "webpage", "publisher": "サンプル", "published_at": "2026-03-01", "event_scoped_summary_ja": "これはサンプルの event-source 要約です。実運用では削除または置換してください。", "why_relevant": "雛形確認用", "evidence_snippet": "サンプル"}

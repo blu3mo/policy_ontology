@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "event_link",
+  "type": "object",
+  "required": [
+    "link_id",
+    "from_event_id",
+    "to_event_id",
+    "relation_type",
+    "rationale",
+    "evidence",
+    "confidence"
+  ],
+  "properties": {
+    "link_id": {
+      "type": "string"
+    },
+    "from_event_id": {
+      "type": "string"
+    },
+    "to_event_id": {
+      "type": "string"
+    },
+    "relation_type": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "string"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
