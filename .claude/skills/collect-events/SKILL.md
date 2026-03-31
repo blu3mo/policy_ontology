@@ -1,6 +1,6 @@
 ---
 name: collect-events
-description: 日本の国政・行政・政策・政治問題について、公式制度過程だけでなく、その外側の出来事も含めてイベント正本とイベント単位の資料要約を作る抽出スキル。10 の代表テーマを横断的にカバーできるように設計している。
+description: 日本の国政・行政・政策・政治問題について、公式制度過程だけでなく、その外側の出来事も含めてイベント正本とイベント単位の資料要約を作る抽出スキル。
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, WebSearch, WebFetch
 model: sonnet
 ---
@@ -16,8 +16,7 @@ model: sonnet
 
 ## 最初にやること
 1. 既存の正本ファイルを読んで重複を避ける。
-2. `docs/想定テーマ10選.md` を読み、このテーマがどの観点を要求するか確認する。
-3. 必要なら `research-collector` や `source_intake_*.md` を参照する。
+2. 必要なら `research-collector` や `source_intake_*.md` を参照する。
 
 ## 手順
 1. 次のような**分離可能な出来事**ごとにイベントを切る。
@@ -73,7 +72,6 @@ model: sonnet
 - `event_domain`
 - `policy_stage`
 - `jurisdiction`
-- `theme_bucket`
 
 ## 資料リンク最低項目
 - `link_id`
@@ -102,4 +100,3 @@ model: sonnet
 - 追加した資料リンク件数
 - 人手確認が必要な重複候補
 - 足りていない領域
-- 10 テーマ横断で未回収の観点

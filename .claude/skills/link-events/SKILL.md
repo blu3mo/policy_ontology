@@ -1,6 +1,6 @@
 ---
 name: link-events
-description: 日本の国政・政策論点データについて、イベント間の関係を証拠付きで追加するスキル。少子化から防災までの 10 テーマを横断し、制度内外のつながりを疎で強く張る。
+description: 日本の国政・政策論点データについて、イベント間の関係を証拠付きで追加するスキル。制度内外のつながりを疎で強く張る。
 context: fork
 agent: relation-linker
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
@@ -50,4 +50,4 @@ model: sonnet
 - 高 confidence リンク数
 - つながりが弱いクラスター
 - 追加収集が必要な箇所
-- 10 テーマ横断で見えた主要な接続パターン
+- 主要な接続パターン
