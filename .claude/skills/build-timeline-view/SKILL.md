@@ -178,11 +178,20 @@ export default graphData;
 ```js
 const sourceLinks = {
   "XX-EV-001": [
-    { source_id: "SRC-010", source_title: "資料タイトル", source_url: "https://..." }
+    {
+      source_id: "SRC-010",
+      source_title: "資料タイトル",
+      source_url: "https://...",
+      why_relevant: "このイベントに対してこの資料がなぜ関連するかの1〜2文の説明",
+      evidence_snippet: "この資料から得られる根拠や事実の要約（1〜2文）"
+    }
   ], ...
 };
 export default sourceLinks;
 ```
+
+**why_relevant**: その資料がそのイベントに対してなぜ関連するかの簡潔な説明（1〜2文）。DetailPanelの資料セクションに表示される。
+**evidence_snippet**: その資料から得られる具体的な根拠・事実の要約（1〜2文）。引用的な形式で表示される。
 
 ### network.js の仕様
 
@@ -191,31 +200,49 @@ export default sourceLinks;
 ```js
 const networkData = {
   orgNodes: [
+    // 組織ノード
     {
       id: "法務省",              // 正規化された短い名前
       label: "法務省",
-      group: "政府",             // "政府" | "業界" | "国際" | "専門家" | "その他"
+      group: "政府",             // "政府" | "業界" | "国際" | "専門家" | "人物" | "その他"
       event_count: 13,
       event_ids: ["XX-EV-001", ...]
-    }, ...
+    },
+    // 人物ノード（graph.js の people フィールドから生成）
+    {
+      id: "山田太郎",
+      label: "山田太郎",
+      group: "人物",             // 人物は必ず "人物"
+      event_count: 3,
+      event_ids: ["XX-EV-005", ...]
+    },
+    ...
   ],
   orgEdges: [
+    // 組織-組織、組織-人物、人物-人物の共起エッジ（同一イベントに登場した関係）
     {
       source: "法務省",
       target: "法制審議会",
       weight: 5,                 // 共有イベント数
       shared_events: ["XX-EV-011", ...]
-    }, ...
+    },
+    {
+      source: "山田太郎",
+      target: "法務省",
+      weight: 3,
+      shared_events: ["XX-EV-005", ...]
+    },
+    ...
   ],
   eventNodes: [
     // graph.js の nodes と同じ構造（重複OK）
-    { id, label, date, date_text, domain, summary, organizations, confidence }
+    { id, label, date, date_text, domain, summary, organizations, people, confidence }
   ],
   sourceLinks: {
-    "XX-EV-001": [{ source_id, source_title, source_url }], ...
+    "XX-EV-001": [{ source_id, source_title, source_url, why_relevant, evidence_snippet }], ...
   },
   orgNameMap: {
-    // graph.js の長い組織名 → network.js の正規化名
+    // graph.js の長い組織名・人物名 → network.js の正規化名
     "株式会社トレードワルツ（貿易コンソーシアム）": "TradeWaltz（貿易コンソーシアム）",
     "法制審議会商法（船荷証券等関係）部会": "法制審議会",
     ...
@@ -224,13 +251,16 @@ const networkData = {
 export default networkData;
 ```
 
-**orgNameMap**: graph.js（タイムライン）の組織名と network.js の正規化名を結ぶマッピング。DetailPanel の「アクター関係図で見る」クリック時にこのマップで名前を変換する。
+**orgNameMap**: graph.js（タイムライン）の組織名・人物名と network.js の正規化名を結ぶマッピング。DetailPanel の「アクター関係図で見る」クリック時にこのマップで名前を変換する。組織だけでなく人物名の表記揺れも含める。
+
+**orgNodes に人物を含める**: graph.js の各ノードの `people` 配列からユニークな人物名を抽出し、`group: "人物"` のノードとして orgNodes に追加する。人物-組織間および人物-人物間の共起エッジ（同一イベントに登場した関係）も orgEdges に追加する。
 
 **group**: アクターのカテゴリ。ネットワーク図のノード色に使う:
 - `政府`: 省庁・審議会・内閣 → 青 `#2563eb`
 - `業界`: 企業・業界団体・プラットフォーム → ローズ `#e11d48`
 - `国際`: 国際機関・外国政府 → アンバー `#f59e0b`
 - `専門家`: 弁護士会・研究会・法律事務所 → エメラルド `#059669`
+- `人物`: 人名 → オレンジ `#c2410c`
 - `その他`: 上記に該当しない → グレー `#64748b`
 
 **正規化ルール**:
@@ -259,7 +289,7 @@ export default narrativeSteps;
 ### データフロー
 
 1. **graph.js**: events.ndjson + event_links.ndjson から自動生成。
-2. **sourceLinks.js**: source_links.ndjson から自動生成。event_id → 資料情報配列のマップ。
+2. **sourceLinks.js**: source_links.ndjson から変換。event_id → 資料情報配列のマップ。`why_relevant` と `evidence_snippet` は上流パイプライン（collect-events 等）で source_links.ndjson に書き込まれているので、そのまま引き継ぐ。
 3. **config.js**: events.ndjson の日付範囲とテーマ名から自動生成。
 4. **narrative.js**: events・links・entities を読み、因果の流れを分析した上で**ナラティブを設計して生成**。これだけがAIの創造的作業。
 5. **layout.js**: config.js から年範囲、graph.js からノード・エッジを読み、座標を自動計算。**変更不要。**
@@ -317,6 +347,7 @@ export default narrativeSteps;
 - **最初のステップでフックをかける**: 読者が先を読みたくなる問いや象徴的な事実から始める。
 - **最後のステップは物語の着地点**: 「解決した」「未解決のまま次に引き継がれた」「当初とは違う形で決着した」など、物語がどこに辿り着いたかを示す。
 - **探索への橋渡しは最終ステップの後に必ず置く**: ストーリーの総括と、探索モードへの明示的な遷移ボタンを含むステップを末尾に1つ追加する。
+- **最終要約ステップの timeCenter は null にする**: 要約ステップ（focusNodes と revealNodes が空の総括ステップ）では `timeCenter: null` に設定する。タイムラインは前ステップの表示位置を維持する。`timeCenter` に年範囲の中央値などを入れてはならない（大きなジャンプが発生し、ユーザーが混乱する）。
 
 ### ステップ数の目安
 
@@ -327,7 +358,7 @@ export default narrativeSteps;
 
 - `revealNodes`: そのステップの文脈で意味のあるノードだけ。4〜8個が適切。
 - `focusNodes`: そのステップで最も重要な1〜2個。エッジはfocusNodes接続のみ表示。
-- `timeCenter`: focusNodesの中央付近の時期。小数年（例: 2022.8 = 2022年10月頃）。
+- `timeCenter`: focusNodesの中央付近の時期。小数年（例: 2022.8 = 2022年10月頃）。**要約ステップ（focusNodes・revealNodes が空のまとめ的ステップ）では `null` に設定する**。`null` の場合、タイムラインは前ステップの表示位置を維持する。
 - `body`: 読者が「なるほど、だからこうなったのか」と因果を理解できる文章。200〜400字。改行（\n\n）で段落を分ける。
 
 ## ビルド手順（厳守）

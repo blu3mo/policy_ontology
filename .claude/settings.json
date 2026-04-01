@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/bluemountain/Downloads/claude_japan_policy_research_final_ja/.claude/hooks/pre_write_guard.py"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre_write_guard.py\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/bluemountain/Downloads/claude_japan_policy_research_final_ja/.claude/hooks/post_write_validate.py"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/post_write_validate.py\""
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/bluemountain/Downloads/claude_japan_policy_research_final_ja/.claude/hooks/log_subagent_event.py start"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/log_subagent_event.py\" start"
           }
         ]
       }
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/bluemountain/Downloads/claude_japan_policy_research_final_ja/.claude/hooks/log_subagent_event.py stop"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/log_subagent_event.py\" stop"
           }
         ]
       }

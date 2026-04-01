@@ -9,10 +9,9 @@ export const YEAR_START = config.yearStart;
 export const YEAR_END = config.yearEnd;
 export const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, i) => YEAR_START + i);
 
-// Canvas height: each year gets ~300px, plus padding
-export const PX_PER_YEAR = 300;
+// Default pixels per year (base minimum; auto-expanded when events overflow)
+export const PX_PER_YEAR = 200;
 export const CANVAS_TOP_PAD = 60;
-export const CANVAS_HEIGHT = (YEAR_END - YEAR_START + 1) * PX_PER_YEAR + CANVAS_TOP_PAD + 80;
 
 // Card sizes by tier
 export const CARD_SIZES = {
@@ -81,17 +80,6 @@ export const EDGE_COLORS = {
   6: '#cbd5e1', // very light – news
 };
 
-// ── Degree computation ─────────────────────────────────────────────────────
-export function computeDegrees() {
-  const deg = {};
-  graphData.nodes.forEach(n => { deg[n.id] = 0; });
-  graphData.edges.forEach(e => {
-    deg[e.source] = (deg[e.source] || 0) + 1;
-    deg[e.target] = (deg[e.target] || 0) + 1;
-  });
-  return deg;
-}
-
 // ── Tier from degree ───────────────────────────────────────────────────────
 export function getTier(degree) {
   if (degree >= 6) return 'hero';
@@ -109,9 +97,72 @@ export function dateToYear(dateStr) {
   return year + (month - 1) / 12 + (day - 1) / 365;
 }
 
+// ── Cumulative Y-offset table ──────────────────────────────────────────────
+// Auto-expands years with many events so cards always fit.
+// config.yearPixels (e.g. { 2025: 600 }) sets a floor for specific years.
+function buildYOffsets() {
+  // Estimate degrees so we can use the correct card heights
+  const degrees = {};
+  graphData.nodes.forEach(n => { degrees[n.id] = 0; });
+  graphData.edges.forEach(e => {
+    degrees[e.source] = (degrees[e.source] || 0) + 1;
+    degrees[e.target] = (degrees[e.target] || 0) + 1;
+  });
+
+  // For each year × lane, sum up card heights to find minimum band height
+  const yearLaneH = {};
+  graphData.nodes.forEach(node => {
+    const decYear = dateToYear(node.date);
+    if (decYear === null) return;
+    const yr = Math.floor(decYear);
+    if (yr < YEAR_START || yr > YEAR_END) return;
+    const tier = getTier(degrees[node.id] || 0);
+    const h = CARD_SIZES[tier].h;
+    const lane = (DOMAIN_COLORS[node.domain] || { lane: 1 }).lane;
+    const key = `${yr}-${lane}`;
+    yearLaneH[key] = (yearLaneH[key] || 0) + h + MIN_GAP;
+  });
+
+  // Per-year auto height = tallest lane + padding
+  const autoH = {};
+  Object.entries(yearLaneH).forEach(([key, h]) => {
+    const yr = parseInt(key); // parseInt("2025-1") → 2025
+    autoH[yr] = Math.max(autoH[yr] || 0, h + 32);
+  });
+
+  // Build cumulative offsets: use max of default, auto, and manual override
+  const offsets = {};
+  let y = CANVAS_TOP_PAD;
+  for (let yr = YEAR_START; yr <= YEAR_END + 1; yr++) {
+    offsets[yr] = y;
+    if (yr <= YEAR_END) {
+      const manual = (config.yearPixels && config.yearPixels[yr]) || 0;
+      y += Math.max(PX_PER_YEAR, autoH[yr] || 0, manual);
+    }
+  }
+  return offsets;
+}
+export const Y_OFFSETS = buildYOffsets();
+export const CANVAS_HEIGHT = Y_OFFSETS[YEAR_END + 1] + 80;
+
 // ── Year → Y pixel on canvas ───────────────────────────────────────────────
 export function yearToY(decimalYear) {
-  return CANVAS_TOP_PAD + (decimalYear - YEAR_START) * PX_PER_YEAR;
+  const floorYear = Math.floor(decimalYear);
+  const frac = decimalYear - floorYear;
+  const y0 = Y_OFFSETS[floorYear] ?? (CANVAS_TOP_PAD + (floorYear - YEAR_START) * PX_PER_YEAR);
+  const y1 = Y_OFFSETS[floorYear + 1] ?? (y0 + PX_PER_YEAR);
+  return y0 + frac * (y1 - y0);
+}
+
+// ── Degree computation ─────────────────────────────────────────────────────
+export function computeDegrees() {
+  const deg = {};
+  graphData.nodes.forEach(n => { deg[n.id] = 0; });
+  graphData.edges.forEach(e => {
+    deg[e.source] = (deg[e.source] || 0) + 1;
+    deg[e.target] = (deg[e.target] || 0) + 1;
+  });
+  return deg;
 }
 
 // ── Layout computation ─────────────────────────────────────────────────────

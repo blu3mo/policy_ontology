@@ -3,10 +3,8 @@ import {
   layout,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  CANVAS_TOP_PAD,
+  Y_OFFSETS,
   YEARS,
-  YEAR_START,
-  PX_PER_YEAR,
   CARD_SIZES,
   DOMAIN_COLORS,
   LANE_CENTERS,
@@ -126,20 +124,21 @@ export default function TimelineViz({
       >
         {/* Year bands */}
         {YEARS.map(year => {
-          const y = CANVAS_TOP_PAD + (year - YEAR_START) * PX_PER_YEAR;
+          const y = Y_OFFSETS[year];
+          const bandH = Y_OFFSETS[year + 1] - y;
           const isEven = year % 2 === 0;
           return (
             <div
               key={year}
               className={`year-band ${isEven ? 'even' : 'odd'}`}
-              style={{ top: y, height: PX_PER_YEAR }}
+              style={{ top: y, height: bandH }}
             />
           );
         })}
 
         {/* Year labels */}
         {YEARS.map(year => {
-          const y = CANVAS_TOP_PAD + (year - YEAR_START) * PX_PER_YEAR;
+          const y = Y_OFFSETS[year];
           return (
             <div key={`lbl-${year}`} className="year-label" style={{ top: y + 4 }}>
               {year}

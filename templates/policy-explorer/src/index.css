@@ -142,9 +142,10 @@ body {
   z-index: 5;
   pointer-events: none;
   margin-left: auto;
-  margin-right: 0;
-  width: 340px;
+  margin-right: 32px;
+  width: 320px;
   padding-bottom: 40vh;
+  margin-top: calc(-1 * (100vh - 52px));
 }
 .scroll-step {
   min-height: 85vh;
@@ -490,9 +491,9 @@ body {
 }
 .detail-connection-item {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 7px 9px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
   background: #f8fafc;
   border-radius: 5px;
   border: 1px solid var(--border);
@@ -500,21 +501,30 @@ body {
   transition: background 0.1s;
 }
 .detail-connection-item:hover { background: #f1f5f9; }
-.conn-arrow {
-  font-size: 11px;
-  color: var(--text-light);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.conn-rel {
+.conn-rel-badge {
+  display: inline-block;
   font-size: 9px;
   font-weight: 700;
-  color: var(--text-muted);
-  margin-bottom: 2px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.conn-body {
+  min-width: 0;
 }
 .conn-title {
   font-size: 11px;
   color: var(--text);
+  line-height: 1.4;
+}
+.conn-rationale {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
   line-height: 1.4;
 }
 .detail-close {
@@ -662,51 +672,33 @@ body {
 
 /* ── Final step CTA ────────────────────────────────────────────── */
 .final-step-cta {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  margin-top: 32px;
 }
-.final-step-cta .btn-primary {
+.final-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 18px 24px;
   font-size: 14px;
   font-weight: 700;
-  padding: 12px 20px;
-  border-radius: 8px;
+  color: white;
   background: #1e293b;
-  border-color: #1e293b;
-  letter-spacing: 0.02em;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.15s;
 }
-.final-step-cta .btn-primary:hover {
+.final-cta-btn:hover {
   background: #0f172a;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  transform: translateY(-1px);
 }
-.final-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 4px;
+.final-cta-btn-arrow {
+  transition: transform 0.15s;
 }
-.final-stat {
-  text-align: center;
-  padding: 8px 4px;
-  background: #f8fafc;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-}
-.final-stat-num {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2563eb;
-  line-height: 1;
-}
-.final-stat-label {
-  font-size: 9px;
-  color: var(--text-muted);
-  margin-top: 2px;
+.final-cta-btn:hover .final-cta-btn-arrow {
+  transform: translateX(2px);
 }
 
 /* ── Confidence badge ──────────────────────────────────────────── */
@@ -735,24 +727,29 @@ body {
 .detail-source-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+}
+.detail-source-entry {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 5px;
+  overflow: hidden;
+  transition: border-color 0.12s;
+}
+.detail-source-entry:hover {
+  border-color: #86efac;
 }
 .detail-source-link {
   display: flex;
   align-items: baseline;
   gap: 6px;
   padding: 6px 9px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 5px;
   text-decoration: none;
   color: inherit;
-  transition: background 0.12s, border-color 0.12s;
   line-height: 1.4;
 }
-.detail-source-link:hover {
-  background: #dcfce7;
-  border-color: #86efac;
+.detail-source-link:hover .detail-source-title {
+  text-decoration: underline;
 }
 .detail-source-id {
   font-size: 9px;
@@ -775,7 +772,67 @@ body {
   color: #16a34a;
   flex-shrink: 0;
 }
+.detail-source-meta {
+  padding: 4px 9px 7px;
+  border-top: 1px solid #d1fae5;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.detail-source-why {
+  font-size: 10px;
+  color: #166534;
+  line-height: 1.5;
+}
+.detail-source-evidence {
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.4;
+}
 
+
+/* ── Hero screen (story mode, before step 1) ──────────────────── */
+.scroll-hero {
+  min-height: calc(100vh - 52px);
+  display: flex;
+  align-items: center;
+  padding: 20px 20px 20px 0;
+}
+.hero-card {
+  background: #ffffff;
+  border-radius: 2px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  width: 100%;
+}
+.hero-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 14px;
+}
+.hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.hero-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+.hero-scroll-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
 /* ── Fade-in animation ─────────────────────────────────────────── */
 @keyframes nodeAppear {
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
@@ -1099,6 +1156,14 @@ body {
 }
 
 /* ── Co-occurrence Groups ─────────────────────────────────────── */
+.orgnet-panel-description {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 0 14px;
+  line-height: 1.6;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
 .orgnet-cooccur-group {
   margin-bottom: 16px;
 }
@@ -1111,18 +1176,26 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   margin-bottom: 6px;
-  cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  transition: background 0.15s;
-}
-.orgnet-cooccur-group-header:hover {
-  background: #f1f5f9;
 }
 .orgnet-cooccur-group-name { flex: 1; }
 .orgnet-cooccur-pivot {
-  color: #94a3b8;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: white;
+  font-family: var(--font);
   font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.orgnet-cooccur-pivot:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #93c5fd;
 }
 
 /* ── Co-occurrence Section (legacy) ──────────────────────────── */
@@ -1173,6 +1246,26 @@ body {
   flex-shrink: 0;
 }
 
+/* ── OrgNetwork source relevance ──────────────────────────────── */
+.orgnet-event-source-item {
+  margin-bottom: 8px;
+}
+.orgnet-event-source-item:last-child {
+  margin-bottom: 0;
+}
+.orgnet-source-why {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.orgnet-source-evidence {
+  font-size: 10px;
+  color: var(--text-light);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
 /* ── Clickable org tags in DetailPanel ────────────────────────── */
 .detail-tag-clickable {
   cursor: pointer;
@@ -1181,4 +1274,172 @@ body {
 .detail-tag-clickable:hover {
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+/* ── Step body expand button ─────────────────────────────────── */
+.step-expand-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 0.15s;
+}
+.step-expand-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ── Explore zoom controls ───────────────────────────────────── */
+.explore-zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 50;
+}
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  transition: background 0.15s, box-shadow 0.15s;
+  line-height: 1;
+}
+.zoom-btn:hover {
+  background: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+}
+
+/* ── OrgNetwork Time Range Filter ────────────────────────────── */
+.orgnet-legend-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+.orgnet-time-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+.orgnet-play-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.orgnet-play-btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+.orgnet-play-btn.playing {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+.orgnet-time-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.orgnet-time-track {
+  position: relative;
+  flex: 1;
+  height: 24px;
+  cursor: pointer;
+}
+.orgnet-time-track::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+.orgnet-time-range {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.orgnet-time-handle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  z-index: 2;
+  transition: box-shadow 0.15s;
+  touch-action: none;
+}
+.orgnet-time-handle:hover {
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+}
+.orgnet-time-handle:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 6px rgba(37,99,235,0.2);
+}
+.orgnet-time-tick {
+  position: absolute;
+  top: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.orgnet-time-tick-line {
+  width: 1px;
+  height: 6px;
+  background: #cbd5e1;
+  margin-top: 6px;
+}
+.orgnet-time-tick-label {
+  font-size: 8px;
+  color: var(--text-light);
+  text-align: center;
+  margin-top: 1px;
+  white-space: nowrap;
 }

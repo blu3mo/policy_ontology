@@ -76,7 +76,15 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
                 </span>
               ))}
               {(node.people || []).map((p, i) => (
-                <span key={`ppl-${i}`} className="detail-tag" style={{ background: '#fef3c7' }}>{p}</span>
+                <span
+                  key={`ppl-${i}`}
+                  className="detail-tag detail-tag-clickable"
+                  style={{ background: '#fef3c7' }}
+                  onClick={() => onNavigateToOrg?.(p)}
+                  title="アクター関係図で見る"
+                >
+                  {p} →
+                </span>
               ))}
             </div>
           </div>
@@ -115,17 +123,28 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
                 <div className="detail-section-label">資料</div>
                 <div className="detail-source-list">
                   {linkedSources.map((src, i) => (
-                    <a
-                      key={`src-${i}`}
-                      href={src.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="detail-source-link"
-                    >
-                      <span className="detail-source-id">{src.source_id}</span>
-                      <span className="detail-source-title">{src.source_title}</span>
-                      <span className="detail-source-ext">↗</span>
-                    </a>
+                    <div key={`src-${i}`} className="detail-source-entry">
+                      <a
+                        href={src.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="detail-source-link"
+                      >
+                        <span className="detail-source-id">{src.source_id}</span>
+                        <span className="detail-source-title">{src.source_title}</span>
+                        <span className="detail-source-ext">↗</span>
+                      </a>
+                      {(src.why_relevant || src.evidence_snippet) && (
+                        <div className="detail-source-meta">
+                          {src.why_relevant && (
+                            <div className="detail-source-why">{src.why_relevant}</div>
+                          )}
+                          {src.evidence_snippet && (
+                            <div className="detail-source-evidence">「{src.evidence_snippet}」</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -147,24 +166,21 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
           return null;
         })()}
 
-        {outEdges.length > 0 && (
+        {inEdges.length > 0 && (
           <div className="detail-section">
-            <div className="detail-section-label">このイベントから → ({outEdges.length}件)</div>
+            <div className="detail-section-label">このイベントへの関係 ({inEdges.length}件)</div>
             <div className="detail-connections">
-              {outEdges.map(edge => (
+              {inEdges.map(edge => (
                 <div
                   key={edge.id}
                   className="detail-connection-item"
-                  onClick={() => onNavigate && onNavigate(edge.target)}
+                  onClick={() => onNavigate && onNavigate(edge.source)}
                 >
-                  <span className="conn-arrow">→</span>
-                  <div>
-                    <div className="conn-rel">{edge.relation_type}</div>
-                    <div className="conn-title">{getNodeTitle(edge.target)}</div>
+                  <span className="conn-rel-badge">{edge.relation_type}</span>
+                  <div className="conn-body">
+                    <div className="conn-title">{getNodeTitle(edge.source)}</div>
                     {edge.rationale && (
-                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px', lineHeight: 1.4 }}>
-                        {edge.rationale}
-                      </div>
+                      <div className="conn-rationale">{edge.rationale}</div>
                     )}
                   </div>
                 </div>
@@ -173,24 +189,21 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
           </div>
         )}
 
-        {inEdges.length > 0 && (
+        {outEdges.length > 0 && (
           <div className="detail-section">
-            <div className="detail-section-label">← このイベントへ ({inEdges.length}件)</div>
+            <div className="detail-section-label">このイベントからの関係 ({outEdges.length}件)</div>
             <div className="detail-connections">
-              {inEdges.map(edge => (
+              {outEdges.map(edge => (
                 <div
                   key={edge.id}
                   className="detail-connection-item"
-                  onClick={() => onNavigate && onNavigate(edge.source)}
+                  onClick={() => onNavigate && onNavigate(edge.target)}
                 >
-                  <span className="conn-arrow">←</span>
-                  <div>
-                    <div className="conn-rel">{edge.relation_type}</div>
-                    <div className="conn-title">{getNodeTitle(edge.source)}</div>
+                  <span className="conn-rel-badge">{edge.relation_type}</span>
+                  <div className="conn-body">
+                    <div className="conn-title">{getNodeTitle(edge.target)}</div>
                     {edge.rationale && (
-                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px', lineHeight: 1.4 }}>
-                        {edge.rationale}
-                      </div>
+                      <div className="conn-rationale">{edge.rationale}</div>
                     )}
                   </div>
                 </div>

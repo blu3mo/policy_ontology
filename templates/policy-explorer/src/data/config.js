@@ -5,5 +5,6 @@ const config = {
   themeSlug: 'placeholder',
   yearStart: 2020,
   yearEnd: 2026,
+  yearPixels: {},
 };
 export default config;

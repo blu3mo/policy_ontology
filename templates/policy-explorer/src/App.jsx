@@ -8,14 +8,13 @@ import networkData from './data/network.js';
 import {
   layout,
   CANVAS_HEIGHT,
-  CANVAS_TOP_PAD,
   CANVAS_WIDTH,
   CARD_SIZES,
   DOMAIN_COLORS,
   LANE_CENTERS,
   EDGE_COLORS,
   RELATION_PRIORITY,
-  PX_PER_YEAR,
+  Y_OFFSETS,
   YEARS,
   YEAR_START,
   YEAR_END,
@@ -163,7 +162,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
   }, [activeHighlightId, filteredIds]);
 
   const onPointerDown = useCallback((e) => {
-    if (e.target.closest('.event-node') || e.target.closest('.detail-panel')) return;
+    if (e.target.closest('.event-node') || e.target.closest('.detail-panel') || e.target.closest('.explore-zoom-controls')) return;
     setDragging(true);
     setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -182,21 +181,43 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
   const onWheel = useCallback((e) => {
     e.preventDefault();
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    // Mouse position relative to the wrap element (viewport space)
-    const rect = wrap.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    // Clamp scroll delta and compute factor
-    const clampedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 100);
-    const factor = 1 - (clampedDelta / 100) * 0.03;
+    if (e.ctrlKey || e.metaKey) {
+      // Pinch-zoom on trackpad (or Ctrl+wheel)
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const factor = 1 - e.deltaY * 0.01;
+      const prevScale = scaleRef.current;
+      const prevOffset = offsetRef.current;
+      const newScale = Math.min(Math.max(prevScale * factor, 0.25), 2.0);
+      const newOffsetX = mx - (mx - prevOffset.x) * (newScale / prevScale);
+      const newOffsetY = my - (my - prevOffset.y) * (newScale / prevScale);
+      scaleRef.current = newScale;
+      offsetRef.current = { x: newOffsetX, y: newOffsetY };
+      setScale(newScale);
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    } else {
+      // Regular scroll → pan
+      const prevOffset = offsetRef.current;
+      const newOffsetY = prevOffset.y - e.deltaY;
+      const newOffsetX = prevOffset.x - (e.deltaX || 0);
+      offsetRef.current = { x: newOffsetX, y: newOffsetY };
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    }
+  }, []);
+
+  const zoomBy = useCallback((factor) => {
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight - 52;
+    const cx = viewW / 2;
+    const cy = viewH / 2;
     const prevScale = scaleRef.current;
     const prevOffset = offsetRef.current;
     const newScale = Math.min(Math.max(prevScale * factor, 0.25), 2.0);
-    // Zoom toward cursor: keep the canvas point under the cursor fixed
-    const newOffsetX = mx - (mx - prevOffset.x) * (newScale / prevScale);
-    const newOffsetY = my - (my - prevOffset.y) * (newScale / prevScale);
+    const newOffsetX = cx - (cx - prevOffset.x) * (newScale / prevScale);
+    const newOffsetY = cy - (cy - prevOffset.y) * (newScale / prevScale);
     scaleRef.current = newScale;
     offsetRef.current = { x: newOffsetX, y: newOffsetY };
     setScale(newScale);
@@ -280,12 +301,13 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
         >
           {/* Year bands + labels */}
           {YEARS.map(year => {
-            const y = CANVAS_TOP_PAD + (year - YEAR_START) * PX_PER_YEAR;
+            const y = Y_OFFSETS[year];
+            const bandH = Y_OFFSETS[year + 1] - y;
             return (
               <React.Fragment key={year}>
                 <div
                   className={`year-band ${year % 2 === 0 ? 'even' : 'odd'}`}
-                  style={{ top: y, height: PX_PER_YEAR }}
+                  style={{ top: y, height: bandH }}
                 />
                 <div className="year-label" style={{ top: y + 4 }}>{year}</div>
               </React.Fragment>
@@ -378,6 +400,12 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
           })}
         </div>
 
+        {/* Zoom controls */}
+        <div className="explore-zoom-controls">
+          <button className="zoom-btn" onClick={() => zoomBy(1.3)} title="ズームイン">+</button>
+          <button className="zoom-btn" onClick={() => zoomBy(1 / 1.3)} title="ズームアウト">−</button>
+        </div>
+
         {/* Tooltip */}
         {hoveredId && (() => {
           const n = layout.nodeMap[hoveredId];
@@ -403,7 +431,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
 // ── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(-1);
   const [viewMode, setViewMode] = useState('story');
   const [selectedOrgId, setSelectedOrgId] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
@@ -412,12 +440,16 @@ export default function App() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [viewportH, setViewportH] = useState(window.innerHeight - VIEWPORT_HEIGHT_OFFSET);
   const [pendingEventId, setPendingEventId] = useState(null);
+  const [expandedSteps, setExpandedSteps] = useState(new Set());
 
   const stepRefs = useRef([]);
+  const heroRef = useRef(null);
   const observerRef = useRef(null);
+  const prevViewOffsetRef = useRef(0);
 
   // Cumulative revealed node IDs up to active step
   const revealedIds = useMemo(() => {
+    if (activeStep < 0) return [];
     const ids = new Set();
     for (let i = 0; i <= activeStep; i++) {
       const step = narrativeSteps[i];
@@ -431,9 +463,15 @@ export default function App() {
   const currentStep = narrativeSteps[activeStep];
 
   // Camera position: center on timeCenter, then nudge to ensure focusNodes are visible
+  // Summary steps (no focusNodes + no revealNodes) keep the previous view position.
   const viewOffset = useMemo(() => {
     const step = narrativeSteps[activeStep];
-    if (!step?.timeCenter) return 0;
+    if (!step?.timeCenter) return prevViewOffsetRef.current;
+
+    const isSummaryStep = (!step.focusNodes || step.focusNodes.length === 0)
+      && (!step.revealNodes || step.revealNodes.length === 0);
+    if (isSummaryStep) return prevViewOffsetRef.current;
+
     const y = yearToY(step.timeCenter);
     let target = y - viewportH / 2;
 
@@ -451,7 +489,9 @@ export default function App() {
       if (maxFocusY > target + viewportH - pad) target = maxFocusY - viewportH + pad;
     }
 
-    return Math.max(0, Math.min(target, CANVAS_HEIGHT - viewportH));
+    const result = Math.max(0, Math.min(target, CANVAS_HEIGHT - viewportH));
+    prevViewOffsetRef.current = result;
+    return result;
   }, [activeStep, viewportH]);
 
   // IntersectionObserver for scroll steps
@@ -466,8 +506,9 @@ export default function App() {
           }
         });
       },
-      { threshold: 0.5, rootMargin: '-10% 0px -40% 0px' }
+      { threshold: 0.15, rootMargin: '-15% 0px -30% 0px' }
     );
+    if (heroRef.current) observerRef.current.observe(heroRef.current);
     stepRefs.current.forEach(ref => {
       if (ref) observerRef.current.observe(ref);
     });
@@ -573,6 +614,20 @@ export default function App() {
 
         {/* Scroll steps */}
         <div className="scroll-steps">
+          {/* Hero screen */}
+          <div
+            className="scroll-hero"
+            data-step-idx="-1"
+            ref={heroRef}
+          >
+            <div className="hero-card">
+              <div className="hero-eyebrow">政策調査タイムライン</div>
+              <h2 className="hero-title">{config.title}</h2>
+              <p className="hero-subtitle">{YEAR_START}〜{YEAR_END} ｜ {layout.nodes.length}イベント · {layout.edges.length}接続</p>
+              <div className="hero-scroll-hint">スクロールして読む ↓</div>
+            </div>
+          </div>
+
           {narrativeSteps.map((step, idx) => (
             <div
               key={step.id}
@@ -584,7 +639,33 @@ export default function App() {
                 <div className="step-number">ステップ {idx + 1} / {narrativeSteps.length}</div>
                 <h3>{step.title}</h3>
                 <div className="step-subtitle">{step.subtitle}</div>
-                <p>{step.body}</p>
+                {(() => {
+                  const MAX_BODY = 280;
+                  const isLong = step.body.length > MAX_BODY;
+                  const isExpanded = expandedSteps.has(step.id);
+                  const displayBody = isLong && !isExpanded ? step.body.slice(0, MAX_BODY) + '…' : step.body;
+                  return (
+                    <>
+                      <p>{displayBody}</p>
+                      {isLong && (
+                        <button
+                          className="step-expand-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedSteps(prev => {
+                              const next = new Set(prev);
+                              if (next.has(step.id)) next.delete(step.id);
+                              else next.add(step.id);
+                              return next;
+                            });
+                          }}
+                        >
+                          {isExpanded ? '閉じる' : '続きを読む'}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* Step progress dots */}
                 <div className="step-progress">
@@ -597,28 +678,14 @@ export default function App() {
                 </div>
 
                 {/* Final step CTA */}
-                {step.isFinal && (
+                {idx === narrativeSteps.length - 1 && (
                   <div className="final-step-cta">
-                    <div className="final-stats">
-                      <div className="final-stat">
-                        <div className="final-stat-num">{layout.nodes.length}</div>
-                        <div className="final-stat-label">イベント</div>
-                      </div>
-                      <div className="final-stat">
-                        <div className="final-stat-num">{layout.edges.length}</div>
-                        <div className="final-stat-label">接続</div>
-                      </div>
-                      <div className="final-stat">
-                        <div className="final-stat-num">{YEARS.length}</div>
-                        <div className="final-stat-label">年</div>
-                      </div>
-                    </div>
                     <button
-                      className="btn btn-primary"
-                      style={{ width: '100%', justifyContent: 'center' }}
+                      className="final-cta-btn"
                       onClick={(e) => { e.stopPropagation(); setViewMode('explore'); }}
                     >
-                      探索モードで全体を見る →
+                      <span className="final-cta-btn-text">全体を自由に探索する</span>
+                      <span className="final-cta-btn-arrow">→</span>
                     </button>
                   </div>
                 )}
