@@ -21,7 +21,7 @@ model: sonnet
 - 同じ組織の同種ページだけをなめて終わらず、制度内外の別経路からも同テーマを探す。
 
 ## 出力先
-`data/processed/source_intake_$TODAY.md`
+`data/{theme-slug}/processed/source_intake_$TODAY.md`
 
 ## 記録対象カテゴリ
 - 官邸・政府全体
@@ -161,7 +161,7 @@ model: sonnet
 
 ## フェーズ 5 ― Markdown 出力
 
-`data/processed/source_intake_$TODAY.md` に次の構成で保存する。
+`data/{theme-slug}/processed/source_intake_$TODAY.md` に次の構成で保存する。
 
 1. テーマ
 2. 検索語群

@@ -19,10 +19,10 @@ model: sonnet
 - 予算、執行、副作用、再修正の観点が抜けていないか
 
 ## 対象ファイル
-- `data/processed/events.ndjson`
-- `data/processed/entities.ndjson`
-- `data/processed/source_links.ndjson`
-- `data/processed/event_links.ndjson`
+- `data/{theme-slug}/processed/events.ndjson`
+- `data/{theme-slug}/processed/entities.ndjson`
+- `data/{theme-slug}/processed/source_links.ndjson`
+- `data/{theme-slug}/processed/event_links.ndjson`
 - `schemas/*.json`
 
 ## 出力

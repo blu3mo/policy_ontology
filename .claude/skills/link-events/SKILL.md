@@ -8,13 +8,13 @@ model: sonnet
 テーマ: $ARGUMENTS
 
 ## 目的
-`data/processed/event_links.ndjson` に、証拠付きのイベント間関係を追記する。
+`data/{theme-slug}/processed/event_links.ndjson` に、証拠付きのイベント間関係を追記する。
 サブエージェントを9軸で並列起動し、制度内外すべての接続を全探索する。
 
 ## 入力
-- `data/processed/events.ndjson`
-- `data/processed/source_links.ndjson`
-- `data/processed/event_links.ndjson`（既存リンクの重複チェック用）
+- `data/{theme-slug}/processed/events.ndjson`
+- `data/{theme-slug}/processed/source_links.ndjson`
+- `data/{theme-slug}/processed/event_links.ndjson`（既存リンクの重複チェック用）
 - `schemas/event_link.schema.json`
 
 ---
@@ -83,7 +83,7 @@ model: sonnet
 
 ## フェーズ 4 ― 書き込み
 
-`data/processed/event_links.ndjson` に NDJSON 形式で追記する（1行1レコード）。
+`data/{theme-slug}/processed/event_links.ndjson` に NDJSON 形式で追記する（1行1レコード）。
 
 ---
 
