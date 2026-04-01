@@ -222,6 +222,7 @@ body {
   height: 100%;
   position: relative;
   background: white;
+  overflow: hidden;
 }
 .timeline-inner {
   position: absolute;
@@ -641,6 +642,7 @@ body {
   overflow: hidden;
   position: relative;
   cursor: grab;
+  touch-action: none;
 }
 .explore-canvas-wrap:active { cursor: grabbing; }
 .explore-canvas {
@@ -1442,4 +1444,305 @@ body {
   text-align: center;
   margin-top: 1px;
   white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Mobile Responsive (max-width: 768px)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── Header ── */
+  .app-header {
+    padding: 0 10px;
+    height: 44px;
+    gap: 6px;
+  }
+  .app-header h1 {
+    font-size: 12px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-header .subtitle {
+    display: none;
+  }
+  .mode-toggle {
+    padding: 1px;
+    border-radius: 16px;
+  }
+  .mode-toggle-btn {
+    padding: 3px 8px;
+    font-size: 10px;
+    border-radius: 14px;
+  }
+
+  /* ── Scrollytelling ── */
+  .sticky-viz {
+    top: 44px;
+    height: calc(100vh - 44px);
+  }
+  .scroll-steps {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: calc(-1 * (100vh - 44px));
+    padding-bottom: 30vh;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .scroll-step {
+    min-height: 70vh;
+    padding: 10px 12px;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+  }
+  .step-card {
+    padding: 16px 16px 14px;
+    max-width: 280px;
+    margin: 0 auto;
+    font-size: 11px;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.96);
+  }
+  .step-card h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .step-card .step-subtitle {
+    font-size: 10px;
+    margin-bottom: 10px;
+  }
+  .step-card p {
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  .step-number {
+    font-size: 9px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+  .step-progress {
+    gap: 3px;
+    margin-top: 10px;
+  }
+  .step-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  /* Hero screen */
+  .scroll-hero {
+    min-height: calc(100vh - 44px);
+    padding: 10px 12px;
+    align-items: center;
+  }
+  .hero-card {
+    padding: 24px 20px 20px;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+  .hero-title {
+    font-size: 17px;
+  }
+  .hero-subtitle {
+    font-size: 11px;
+    margin-bottom: 20px;
+  }
+
+  /* Final CTA */
+  .final-cta-btn {
+    padding: 14px 16px;
+    font-size: 12px;
+  }
+
+  /* ── Detail Panel (full-screen on mobile) ── */
+  .detail-panel {
+    top: 44px;
+    width: 100%;
+    left: 0;
+    right: 0;
+    transform: translateY(100%);
+    border-left: none;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  }
+  .detail-panel.open {
+    transform: translateY(0);
+  }
+  .detail-header {
+    padding: 12px 14px 10px;
+  }
+  .detail-title {
+    font-size: 13px;
+  }
+  .detail-body {
+    padding: 12px 14px;
+  }
+  .detail-summary {
+    font-size: 11px;
+  }
+
+  /* ── Mini position bar ── */
+  .mini-bar {
+    right: 4px;
+    height: 100px;
+    width: 3px;
+  }
+
+  /* ── Tooltip (hide on mobile, use tap-to-select instead) ── */
+  .tooltip {
+    display: none;
+  }
+
+  /* ── Explore Mode ── */
+  .explore-overlay {
+    top: 44px;
+  }
+  .explore-header {
+    padding: 6px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .explore-header h2 {
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .explore-search {
+    min-width: 100px;
+    max-width: none;
+    flex: 1;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .explore-filter-chips {
+    gap: 4px;
+    width: 100%;
+    order: 10;
+  }
+  .filter-chip {
+    font-size: 9px;
+    padding: 2px 7px;
+  }
+  .explore-legend {
+    display: none;
+  }
+  .explore-zoom-controls {
+    bottom: 12px;
+    right: 12px;
+  }
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  /* ── OrgNetwork ── */
+  .orgnet-overlay {
+    top: 44px;
+  }
+  .orgnet-legend-bar {
+    padding: 6px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .orgnet-legend-item {
+    font-size: 9px;
+    gap: 3px;
+  }
+  .orgnet-legend-dot {
+    width: 8px;
+    height: 8px;
+  }
+  .orgnet-legend-separator {
+    display: none;
+  }
+  .orgnet-time-filter {
+    width: 100%;
+    order: 10;
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* OrgNetwork body: stack vertically */
+  .orgnet-body {
+    flex-direction: column;
+  }
+  .orgnet-canvas-container {
+    flex: 1;
+    min-height: 50%;
+  }
+  .orgnet-canvas-container.orgnet-with-panel {
+    flex: 0 0 45%;
+  }
+
+  /* Panel slides from bottom */
+  .orgnet-panel {
+    width: 100% !important;
+    height: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    transition: height 0.3s ease;
+  }
+  .orgnet-panel.open {
+    width: 100% !important;
+    height: 55%;
+  }
+  .orgnet-panel-inner {
+    width: 100%;
+    min-width: 0;
+  }
+  .orgnet-panel-header {
+    padding: 12px 14px 10px;
+  }
+  .orgnet-panel-org-name {
+    font-size: 14px;
+  }
+  .orgnet-panel-scroll {
+    padding: 10px 14px 16px;
+  }
+  .orgnet-cooccur-group-header {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .orgnet-event-item-header {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .orgnet-event-detail {
+    padding: 0 10px 10px 24px;
+  }
+}
+
+/* ── Very small screens (max-width: 420px) ── */
+@media (max-width: 420px) {
+  .app-header h1 {
+    max-width: 80px;
+    font-size: 11px;
+  }
+  .mode-toggle-btn {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+  .step-card {
+    max-width: 240px;
+    padding: 12px 12px 10px;
+  }
+  .step-card h3 {
+    font-size: 13px;
+  }
+  .hero-card {
+    max-width: 240px;
+    padding: 20px 16px 16px;
+  }
+  .hero-title {
+    font-size: 15px;
+  }
+  .explore-header h2 {
+    display: none;
+  }
 }

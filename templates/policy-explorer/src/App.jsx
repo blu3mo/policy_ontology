@@ -22,7 +22,7 @@ import {
   dateToYear,
 } from './data/layout.js';
 
-const VIEWPORT_HEIGHT_OFFSET = 52; // header height
+const VIEWPORT_HEIGHT_OFFSET = window.innerWidth <= 768 ? 44 : 52; // header height
 
 // ── Tooltip component ──────────────────────────────────────────────────────
 function Tooltip({ node, mouseX, mouseY }) {
@@ -89,9 +89,10 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
   // On mount: center on initialNode, or default to most recent event
   useEffect(() => {
-    const targetScale = 0.72;
+    const isMobile = window.innerWidth <= 768;
+    const targetScale = isMobile ? 0.4 : 0.72;
     const viewW = window.innerWidth;
-    const viewH = window.innerHeight - 52;
+    const viewH = window.innerHeight - (isMobile ? 44 : 52);
 
     if (initialNodeId) {
       const node = layout.nodeMap[initialNodeId];
@@ -210,7 +211,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
   const zoomBy = useCallback((factor) => {
     const viewW = window.innerWidth;
-    const viewH = window.innerHeight - 52;
+    const viewH = window.innerHeight - (window.innerWidth <= 768 ? 44 : 52);
     const cx = viewW / 2;
     const cy = viewH / 2;
     const prevScale = scaleRef.current;
@@ -224,12 +225,67 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
     setOffset({ x: newOffsetX, y: newOffsetY });
   }, []);
 
+  // Pinch-to-zoom for touch devices
+  const lastTouchDist = useRef(null);
+  const lastTouchCenter = useRef(null);
+  const onTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDist.current = Math.sqrt(dx * dx + dy * dy);
+      lastTouchCenter.current = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (e.touches.length === 2 && lastTouchDist.current != null) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const factor = dist / lastTouchDist.current;
+      lastTouchDist.current = dist;
+
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+      const prevScale = scaleRef.current;
+      const prevOffset = offsetRef.current;
+      const newScale = Math.min(Math.max(prevScale * factor, 0.15), 2.0);
+      const newOffsetX = cx - (cx - prevOffset.x) * (newScale / prevScale);
+      const newOffsetY = cy - (cy - prevOffset.y) * (newScale / prevScale);
+      scaleRef.current = newScale;
+      offsetRef.current = { x: newOffsetX, y: newOffsetY };
+      setScale(newScale);
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    lastTouchDist.current = null;
+    lastTouchCenter.current = null;
+  }, []);
+
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
     wrap.addEventListener('wheel', onWheel, { passive: false });
-    return () => wrap.removeEventListener('wheel', onWheel);
-  }, [onWheel]);
+    wrap.addEventListener('touchstart', onTouchStart, { passive: false });
+    wrap.addEventListener('touchmove', onTouchMove, { passive: false });
+    wrap.addEventListener('touchend', onTouchEnd);
+    return () => {
+      wrap.removeEventListener('wheel', onWheel);
+      wrap.removeEventListener('touchstart', onTouchStart);
+      wrap.removeEventListener('touchmove', onTouchMove);
+      wrap.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [onWheel, onTouchStart, onTouchMove, onTouchEnd]);
 
   const formatDateShort = (dateStr) => {
     if (!dateStr) return '';
@@ -516,7 +572,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handle = () => setViewportH(window.innerHeight - VIEWPORT_HEIGHT_OFFSET);
+    const handle = () => {
+      const headerH = window.innerWidth <= 768 ? 44 : 52;
+      setViewportH(window.innerHeight - headerH);
+    };
     window.addEventListener('resize', handle);
     return () => window.removeEventListener('resize', handle);
   }, []);

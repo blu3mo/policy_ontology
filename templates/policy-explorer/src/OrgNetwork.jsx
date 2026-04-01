@@ -262,7 +262,8 @@ export default function OrgNetwork({ selectedOrgId, onSelectOrg, onNavigateToEve
   /* ── Build/rebuild D3 simulation when filtered graph changes ── */
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    svg.attr('viewBox', '0 0 900 700');
+    const isMobile = window.innerWidth <= 768;
+    svg.attr('viewBox', isMobile ? '0 0 600 500' : '0 0 900 700');
 
     // Stop previous simulation
     if (simulationRef.current) {
@@ -279,13 +280,16 @@ export default function OrgNetwork({ selectedOrgId, onSelectOrg, onNavigateToEve
     });
 
     // Create node data with cached positions
+    const centerX = isMobile ? 300 : 450;
+    const centerY = isMobile ? 250 : 350;
+
     const nodes = filteredGraph.nodes.map(n => {
       const cached = positionCache.current.get(n.id);
       return {
         ...n,
-        r: nodeRadius(n.event_count),
-        x: cached?.x ?? (450 + (Math.random() - 0.5) * 200),
-        y: cached?.y ?? (350 + (Math.random() - 0.5) * 200),
+        r: isMobile ? nodeRadius(n.event_count) * 0.8 : nodeRadius(n.event_count),
+        x: cached?.x ?? (centerX + (Math.random() - 0.5) * 200),
+        y: cached?.y ?? (centerY + (Math.random() - 0.5) * 200),
       };
     });
     nodesRef.current = nodes;
@@ -304,14 +308,14 @@ export default function OrgNetwork({ selectedOrgId, onSelectOrg, onNavigateToEve
 
     // D3 force simulation
     const sim = d3.forceSimulation(nodes)
-      .force('center', d3.forceCenter(450, 350).strength(0.05))
+      .force('center', d3.forceCenter(centerX, centerY).strength(0.05))
       .force('charge', d3.forceManyBody().strength(-280).distanceMax(400))
       .force('collision', d3.forceCollide().radius(d => d.r + 8).strength(0.8))
       .force('link', d3.forceLink(links).id(d => d.id)
         .distance(d => 120 - d.weight * 5)
         .strength(d => 0.3 + d.weight * 0.05))
-      .force('x', d3.forceX(450).strength(0.03))
-      .force('y', d3.forceY(350).strength(0.03))
+      .force('x', d3.forceX(centerX).strength(0.03))
+      .force('y', d3.forceY(centerY).strength(0.03))
       .alphaDecay(0.025)
       .velocityDecay(0.45)
       .alpha(0.3); // gentle start for rebuilds
@@ -350,23 +354,25 @@ export default function OrgNetwork({ selectedOrgId, onSelectOrg, onNavigateToEve
       .attr('fill-opacity', 0.15);
 
     // Labels
+    const labelFontSize = isMobile ? '7.5px' : '9.5px';
+    const labelFontSizeSmall = isMobile ? '7px' : '9px';
     nodeAll.each(function(d) {
       const g = d3.select(this);
-      if (d.r >= 20) {
-        const maxCharsPerLine = Math.max(2, Math.floor(d.r / 5.5));
+      if (d.r >= (isMobile ? 16 : 20)) {
+        const maxCharsPerLine = Math.max(2, Math.floor(d.r / (isMobile ? 4.5 : 5.5)));
         const lines = wrapText(d.label, maxCharsPerLine);
-        const lineHeight = 11;
+        const lineHeight = isMobile ? 9 : 11;
         const startY = -(lines.length - 1) * lineHeight / 2;
         lines.forEach((line, i) => {
           g.append('text')
             .attr('dy', startY + i * lineHeight + 4)
-            .attr('font-size', '9.5px')
+            .attr('font-size', labelFontSize)
             .text(line);
         });
       } else {
         g.append('text')
-          .attr('dy', d.r + 13)
-          .attr('font-size', '9px')
+          .attr('dy', d.r + (isMobile ? 10 : 13))
+          .attr('font-size', labelFontSizeSmall)
           .text(d.label);
       }
     });
