@@ -213,7 +213,7 @@
 ```
 /build-timeline-view {テーマ名}
 ```
-スクロールテリング形式のReactアプリを生成する。ナラティブステップを設計し、タイムラインのパン・段階的開示・探索モードを備えたインタラクティブなビューを構築する。
+`templates/policy-explorer/` の汎用テンプレートをコピーし、テーマ固有のデータ5ファイル（`config.js`, `graph.js`, `sourceLinks.js`, `network.js`, `narrative.js`）だけを生成する。テンプレートのReactコード自体は変更しない。アプリは3つのビューモードを持つ: ストーリー（スクロールテリング）、タイムライン（自由探索）、アクター（主体間ネットワーク + ピボット探索）。
 
 **出力**: `outputs/{theme-slug}/timeline_graph.json`, `outputs/{theme-slug}/policy-explorer/`
 
@@ -233,6 +233,20 @@ QA や可視化の過程で不足が見つかれば、ステップ1〜3に戻っ
 
 ```
 ├── schemas/                         # 必須フィールド定義（全テーマ共通）
+├── templates/
+│   └── policy-explorer/            # 可視化アプリの汎用テンプレート（全テーマ共通）
+│       ├── src/
+│       │   ├── App.jsx             # 3モード管理（ストーリー/タイムライン/アクター）
+│       │   ├── TimelineViz.jsx
+│       │   ├── DetailPanel.jsx     # 資料リンク + アクターへの遷移
+│       │   ├── OrgNetwork.jsx      # アクターネットワーク（D3 force + ピボット探索）
+│       │   ├── index.css
+│       │   ├── main.jsx
+│       │   └── data/
+│       │       └── layout.js       # config.js から年範囲を読む
+│       ├── index.html
+│       ├── package.json
+│       └── vite.config.js
 ├── data/
 │   └── {theme-slug}/               # テーマ別データ（例: choson-gikai/）
 │       └── processed/
@@ -246,7 +260,13 @@ QA や可視化の過程で不足が見つかれば、ステップ1〜3に戻っ
 │       ├── timeline_graph.json
 │       ├── timeline_*.csv
 │       ├── qa_report_*.md
-│       └── policy-explorer/        # Vite+Reactアプリ
+│       └── policy-explorer/        # テンプレートコピー + データ5ファイル
+│           └── src/data/
+│               ├── config.js       # ← 生成: タイトル・年範囲
+│               ├── graph.js        # ← 生成: ノード+エッジ
+│               ├── sourceLinks.js  # ← 生成: 資料リンクマップ
+│               ├── network.js      # ← 生成: アクターネットワーク+名前マッピング
+│               └── narrative.js    # ← 生成: ストーリーステップ
 └── .gitignore                       # data/*/processed/ と outputs/*/ を除外
 ```
 

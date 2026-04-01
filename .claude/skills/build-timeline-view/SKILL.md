@@ -82,48 +82,187 @@ model: sonnet
 
 探索モードは `position: fixed` のフルスクリーンオーバーレイとして実装し、スクロールテリングのDOM構造から完全に切り離す。これにより「スクロールするとストーリーに戻ってしまう」問題を回避する。
 
-## 技術アーキテクチャ
+## テンプレートアーキテクチャ
 
-### スタック
-- **Vite + React（JSX）**: `npm create vite@latest -- --template react`
-- CDN依存なし。ローカルビルドで完結。
-- `npx vite build` で `dist/` に静的ファイルを出力。
+### 原則: テンプレート + データ4ファイル
 
-### ファイル構成
+Reactアプリのコード（コンポーネント・CSS・レイアウトロジック）は `templates/policy-explorer/` に一元管理されている。**テーマ固有のコードは一切触らない。** このスキルは以下だけを生成する:
+
+1. テンプレートを `outputs/{theme-slug}/policy-explorer/` にコピー
+2. テーマ固有のデータ5ファイルを `src/data/` に配置
+3. `npm install && npm run build`
+
+### テンプレート（変更しない）
 
 ```
-outputs/policy-explorer/
+templates/policy-explorer/
 ├── src/
-│   ├── data/
-│   │   ├── graph.js        # timeline_graph.json をES module化したもの
-│   │   ├── layout.js       # レイアウト計算・定数定義・ドメイン色・関係線スタイル
-│   │   └── narrative.js    # スクロールテリングのステップ定義
-│   ├── App.jsx             # メインアプリ（モード管理・スクロール監視・ツールチップ）
-│   ├── TimelineViz.jsx     # タイムライン描画（ビューポート・パン・ノード・エッジ）
-│   ├── DetailPanel.jsx     # 右スライドイン詳細パネル（イン/アウト接続分離）
-│   ├── index.css           # 全スタイル（CSS変数ベース）
-│   └── main.jsx            # エントリポイント
+│   ├── App.jsx             # メインアプリ（3モード: ストーリー/タイムライン/アクター）
+│   ├── TimelineViz.jsx     # タイムライン描画
+│   ├── DetailPanel.jsx     # 詳細パネル（sourceLinksから資料リンク表示、アクターへのリンク）
+│   ├── OrgNetwork.jsx      # アクターネットワーク（D3 force + ピボット探索パネル）
+│   ├── index.css           # 全スタイル
+│   ├── main.jsx            # エントリポイント
+│   └── data/
+│       └── layout.js       # レイアウト計算（config.jsからYEAR_START/ENDを読む）
 ├── index.html
-└── package.json
+├── package.json            # d3 を含む
+└── vite.config.js
+```
+
+### テーマ固有データ（毎回生成する5ファイル）
+
+```
+outputs/{theme-slug}/policy-explorer/src/data/
+├── config.js          # タイトル・年範囲・テーマslug
+├── graph.js           # ノード+エッジ（events/event_links → ES module）
+├── sourceLinks.js     # event_id → 資料タイトル+URLマップ
+├── network.js         # アクターネットワークデータ（orgNodes/orgEdges/orgNameMap）
+└── narrative.js       # ストーリーテリングのステップ定義
+```
+
+### config.js の仕様
+
+```js
+const config = {
+  title: 'テーマのタイトル（ヘッダーに表示）',
+  subtitle: null,  // null なら「{yearStart}〜{yearEnd} | Nイベント · N接続」を自動生成
+  themeSlug: 'theme-slug',
+  yearStart: 2004,  // データ中の最小年
+  yearEnd: 2026,    // データ中の最大年 + 1
+};
+export default config;
+```
+
+### graph.js の仕様
+
+```js
+const graphData = {
+  meta: { theme: "テーマ名", theme_slug: "slug", generated: "YYYY-MM-DD" },
+  nodes: [
+    {
+      id: "XX-EV-001",
+      label: "イベントタイトル",
+      date: "2022-04-27",           // event_date_start
+      date_text: "2022年4月27日",    // event_date_text
+      event_type: "審議会部会",
+      domain: "公式制度過程",         // event_domain（3ドメインのいずれか）
+      policy_stage: "審議",
+      organizations: ["法務省"],
+      people: [],
+      summary: "要約テキスト...",
+      source_ids: ["SRC-010"],
+      confidence: 0.95,
+      notes_uncertainty: "..."
+    }, ...
+  ],
+  edges: [
+    {
+      id: "lnk_001",
+      source: "XX-EV-001",
+      target: "XX-EV-002",
+      relation_type: "発端となる",
+      rationale: "...",
+      evidence: "...",
+      confidence: "high"
+    }, ...
+  ]
+};
+export default graphData;
+```
+
+**domain フィールド**: 必ず `公式制度過程` `制度への入力・反応` `社会的外部要因` の3値のいずれかにマップする。これがレーン配置の基準になる。
+
+### sourceLinks.js の仕様
+
+```js
+const sourceLinks = {
+  "XX-EV-001": [
+    { source_id: "SRC-010", source_title: "資料タイトル", source_url: "https://..." }
+  ], ...
+};
+export default sourceLinks;
+```
+
+### network.js の仕様
+
+アクターネットワーク（主体間の共起関係）のデータ。events.ndjson + entities.ndjson から生成する。
+
+```js
+const networkData = {
+  orgNodes: [
+    {
+      id: "法務省",              // 正規化された短い名前
+      label: "法務省",
+      group: "政府",             // "政府" | "業界" | "国際" | "専門家" | "その他"
+      event_count: 13,
+      event_ids: ["XX-EV-001", ...]
+    }, ...
+  ],
+  orgEdges: [
+    {
+      source: "法務省",
+      target: "法制審議会",
+      weight: 5,                 // 共有イベント数
+      shared_events: ["XX-EV-011", ...]
+    }, ...
+  ],
+  eventNodes: [
+    // graph.js の nodes と同じ構造（重複OK）
+    { id, label, date, date_text, domain, summary, organizations, confidence }
+  ],
+  sourceLinks: {
+    "XX-EV-001": [{ source_id, source_title, source_url }], ...
+  },
+  orgNameMap: {
+    // graph.js の長い組織名 → network.js の正規化名
+    "株式会社トレードワルツ（貿易コンソーシアム）": "TradeWaltz（貿易コンソーシアム）",
+    "法制審議会商法（船荷証券等関係）部会": "法制審議会",
+    ...
+  }
+};
+export default networkData;
+```
+
+**orgNameMap**: graph.js（タイムライン）の組織名と network.js の正規化名を結ぶマッピング。DetailPanel の「アクター関係図で見る」クリック時にこのマップで名前を変換する。
+
+**group**: アクターのカテゴリ。ネットワーク図のノード色に使う:
+- `政府`: 省庁・審議会・内閣 → 青 `#2563eb`
+- `業界`: 企業・業界団体・プラットフォーム → ローズ `#e11d48`
+- `国際`: 国際機関・外国政府 → アンバー `#f59e0b`
+- `専門家`: 弁護士会・研究会・法律事務所 → エメラルド `#059669`
+- `その他`: 上記に該当しない → グレー `#64748b`
+
+**正規化ルール**:
+- 同一組織の表記揺れ（例: 「経済産業省」「経済産業省（G7議長国日本）」「経済産業省 貿易経済協力局貿易振興課」）は最短の代表名に統一
+- 部会は親組織に統合（例: 「法制審議会商法（船荷証券等関係）部会」→「法制審議会」）
+- P&Iグループ等の上位組織は代表名に統合
+
+### narrative.js の仕様
+
+```js
+const narrativeSteps = [
+  {
+    id: 'step-0',
+    title: 'ステップタイトル',
+    subtitle: 'サブタイトル',
+    body: '本文テキスト（200〜400字）。\n\n段落分けに改行2つ。',
+    revealNodes: ['XX-EV-001', 'XX-EV-002'],   // このステップで出現させるノード
+    focusNodes: ['XX-EV-001'],                  // ハイライトするノード
+    timeCenter: 2022.3,                          // カメラ目標位置（小数年）
+    showEdges: true,                             // focusNodes接続のエッジを表示するか
+  }, ...
+];
+export default narrativeSteps;
 ```
 
 ### データフロー
 
-1. **graph.js**: `timeline_graph.json` を `export default {...}` に変換。
-   - ノード: id, label, date, date_text, event_type, domain, policy_stage, organizations, people, summary, source_refs, confidence, notes_uncertainty
-   - エッジ: id, source, target, relation_type, rationale, evidence, confidence
-
-2. **layout.js**: graph.js を読み、レイアウト位置を計算。
-   - `computeDegrees()`: エッジ数からノードの接続度を算出。
-   - `computeLayout()`: 日付→Y位置、ドメイン→レーン→X位置、重なり解消。
-   - 全ての定数（カードサイズ、色、関係線スタイル、年リスト）をここに集約。
-
-3. **narrative.js**: ナラティブステップの配列。各ステップに:
-   - `id`, `title`, `subtitle`, `body`: 表示テキスト。
-   - `revealNodes`: このステップで新たに出現させるノードID配列。
-   - `focusNodes`: このステップでハイライトするノードID配列。
-   - `timeCenter`: カメラの目標位置（小数年）。
-   - `edges`: このステップでエッジを表示するか。
+1. **graph.js**: events.ndjson + event_links.ndjson から自動生成。
+2. **sourceLinks.js**: source_links.ndjson から自動生成。event_id → 資料情報配列のマップ。
+3. **config.js**: events.ndjson の日付範囲とテーマ名から自動生成。
+4. **narrative.js**: events・links・entities を読み、因果の流れを分析した上で**ナラティブを設計して生成**。これだけがAIの創造的作業。
+5. **layout.js**: config.js から年範囲、graph.js からノード・エッジを読み、座標を自動計算。**変更不要。**
 
 ### スクロールテリングの仕組み
 
@@ -191,14 +330,53 @@ outputs/policy-explorer/
 - `timeCenter`: focusNodesの中央付近の時期。小数年（例: 2022.8 = 2022年10月頃）。
 - `body`: 読者が「なるほど、だからこうなったのか」と因果を理解できる文章。200〜400字。改行（\n\n）で段落を分ける。
 
+## ビルド手順（厳守）
+
+### 1. テンプレートをコピー
+
+```bash
+THEME_SLUG="テーマのslug"
+mkdir -p outputs/${THEME_SLUG}
+cp -r templates/policy-explorer outputs/${THEME_SLUG}/policy-explorer
+```
+
+### 2. データ5ファイルを生成
+
+以下の5ファイルを `outputs/${THEME_SLUG}/policy-explorer/src/data/` に書き込む:
+- `config.js` — テーマ名・年範囲をevents.ndjsonから算出
+- `graph.js` — events.ndjson + event_links.ndjson → `{ meta, nodes, edges }`
+- `sourceLinks.js` — source_links.ndjson → `{ event_id: [{source_id, source_title, source_url}] }`
+- `network.js` — events.ndjson + entities.ndjson → アクターネットワーク（orgNodes, orgEdges, orgNameMap）
+- `narrative.js` — AI が因果分析してステップを設計
+
+### 3. CSV + JSON も出力
+
+- `outputs/${THEME_SLUG}/timeline_graph.json` — graph.js と同内容のJSON
+- `outputs/${THEME_SLUG}/timeline_nodes.csv` — ノード一覧
+- `outputs/${THEME_SLUG}/timeline_edges.csv` — エッジ一覧
+
+### 4. npm install & build
+
+```bash
+cd outputs/${THEME_SLUG}/policy-explorer
+npm install
+npm run build
+```
+
+### 重要: テンプレートのコードは変更しない
+
+`App.jsx`, `TimelineViz.jsx`, `DetailPanel.jsx`, `index.css`, `layout.js`, `main.jsx` は**一切編集しない**。テーマ固有の情報はすべて `config.js`, `graph.js`, `sourceLinks.js`, `narrative.js` の4ファイルに閉じ込める。
+
+テンプレートに改善が必要な場合は `templates/policy-explorer/` 側を修正すること。
+
 ## 生成物
 
 | ファイル | 役割 |
 |---|---|
-| `outputs/timeline_graph.json` | グラフデータ正本（ノード+エッジ+メタデータ） |
-| `outputs/timeline_nodes.csv` | ノード一覧（分析用） |
-| `outputs/timeline_edges.csv` | エッジ一覧（分析用） |
-| `outputs/policy-explorer/` | Vite+Reactアプリ（`npm run dev` で起動） |
+| `outputs/{theme-slug}/timeline_graph.json` | グラフデータ正本（ノード+エッジ+メタデータ） |
+| `outputs/{theme-slug}/timeline_nodes.csv` | ノード一覧（分析用） |
+| `outputs/{theme-slug}/timeline_edges.csv` | エッジ一覧（分析用） |
+| `outputs/{theme-slug}/policy-explorer/` | Vite+Reactアプリ（`npm run dev` で起動） |
 
 ## 完了時に返すこと
 
@@ -207,11 +385,11 @@ outputs/policy-explorer/
 - 日付欠損や参照不整合で落ちたレコード
 - 横断的に現れた主要主体やテーマ間の交点
 - ナラティブステップの一覧と各ステップのfocusNodes
-- dev サーバーの起動方法（`cd outputs/policy-explorer && npm run dev`）
+- dev サーバーの起動方法（`cd outputs/{theme-slug}/policy-explorer && npm run dev`）
 
 ## データルール
 
-- 正本ファイル（`data/processed/`）だけを読む。
+- 正本ファイル（`data/{theme-slug}/processed/`）だけを読む。
 - 欠落している情報は捏造しない。
 - 証拠識別子を落とさず、後で監査できる状態にする。
 - ソースコード内の日本語テキストは実際の文字で書く（Unicodeエスケープ \uXXXX はJSXテキストノード内で文字化けする）。
