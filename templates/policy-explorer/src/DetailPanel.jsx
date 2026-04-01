@@ -55,10 +55,10 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
         )}
 
         {node.notes_uncertainty && (
-          <div className="detail-section">
-            <div className="detail-section-label">不確実性・注記</div>
+          <details className="detail-uncertainty-details">
+            <summary className="detail-uncertainty-toggle">注記あり</summary>
             <div className="detail-uncertainty">{node.notes_uncertainty}</div>
-          </div>
+          </details>
         )}
 
         {(node.organizations?.length > 0 || node.people?.length > 0) && (
