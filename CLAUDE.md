@@ -173,17 +173,53 @@
 - 既知でない情報は補完せず、`null` または不確実性メモに残す。
 - 政策形成への影響を推定する場合は、必ず「何を通じて影響したか」を書く。
 
-## 標準ワークフロー
+## テーマ別パイプライン
 
-非自明な作業では次の順で進める。
-1. ソース探索
-2. 抽出計画
-3. イベント・資料レコード作成
-4. 人物・組織・日付・場所の正規化
-5. イベント間リンク作成
-6. QA
-7. 可視化生成
-8. 追加探索が必要なら不足観点を補って再実行
+テーマを設定したら、以下のスキルを順番に実行して一気通貫で調査を完成させる。各ステップの出力が次のステップの入力になる。
+
+### ステップ1: 資料の広域収集
+```
+/intake-source-batch {テーマ名}
+```
+官邸・国会・各省庁を起点に、社会・市場・司法・自治体・海外動向まで候補資料を広く集める。サブエージェントを並列起動して探索量を最大化する。
+
+**出力**: `data/{theme-slug}/processed/source_intake_*.md`, `source_links.ndjson`
+
+### ステップ2: イベント正本の作成
+```
+/collect-events {テーマ名}
+```
+収集した資料からイベントを抽出し、正本データを作る。公式制度過程だけでなく外部要因も独立イベントとして記録する。
+
+**出力**: `data/{theme-slug}/processed/events.ndjson`, `entities.ndjson`
+
+### ステップ3: イベント間リンクの作成
+```
+/link-events {テーマ名}
+```
+9軸のサブエージェントを並列展開し、イベント間の因果・参照・制度的連続性を証拠付きで結ぶ。
+
+**出力**: `data/{theme-slug}/processed/event_links.ndjson`
+
+### ステップ4: QA
+```
+/qa-event-db {テーマ名}
+```
+欠損、重複、弱い根拠、参照切れ、スキーマ逸脱を点検する。問題が見つかれば前のステップに戻って修正する。
+
+**出力**: `outputs/{theme-slug}/qa_report_*.md`
+
+### ステップ5: 可視化の生成
+```
+/build-timeline-view {テーマ名}
+```
+スクロールテリング形式のReactアプリを生成する。ナラティブステップを設計し、タイムラインのパン・段階的開示・探索モードを備えたインタラクティブなビューを構築する。
+
+**出力**: `outputs/{theme-slug}/timeline_graph.json`, `outputs/{theme-slug}/policy-explorer/`
+
+### 追加サイクル
+
+QA や可視化の過程で不足が見つかれば、ステップ1〜3に戻って追加探索・追加抽出・追加リンクを行う。パイプラインは一方通行ではなく、フィードバックループとして運用する。
 
 ## ツール運用方針
 
@@ -193,11 +229,29 @@
 - 大きいファイルを書き換えるより、NDJSON に追記する運用を優先する。
 - テーマによっては、政府・国会以外の資料群を最初から探索対象に含める。
 
-## 重要パス
+## ディレクトリ構造
 
-- `schemas/` — 必須フィールド定義
-- `data/processed/` — 正本データ
-- `outputs/` — 可視化やレポート
-- `docs/日本の国政調査ガイド.md` — 日本向け調査ガイド
-- `docs/想定テーマ10選.md` — テーマ横断の観点整理
-- `docs/運用ガイド.md` — 実運用プロンプト例
+```
+├── schemas/                         # 必須フィールド定義（全テーマ共通）
+├── docs/                            # ガイド・テーマ一覧（全テーマ共通）
+│   ├── 日本の国政調査ガイド.md
+│   ├── 想定テーマ10選.md
+│   └── 運用ガイド.md
+├── data/
+│   └── {theme-slug}/               # テーマ別データ（例: choson-gikai/）
+│       └── processed/
+│           ├── events.ndjson
+│           ├── event_links.ndjson
+│           ├── entities.ndjson
+│           ├── source_links.ndjson
+│           └── source_intake_*.md
+├── outputs/
+│   └── {theme-slug}/               # テーマ別成果物
+│       ├── timeline_graph.json
+│       ├── timeline_*.csv
+│       ├── qa_report_*.md
+│       └── policy-explorer/        # Vite+Reactアプリ
+└── .gitignore                       # data/*/processed/ と outputs/*/ を除外
+```
+
+`{theme-slug}` はテーマの短い英語識別子（例: `choson-gikai`, `generative-ai-regulation`, `child-support-policy`）。各スキルはこのslugを使ってデータの読み書き先を決定する。

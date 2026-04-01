@@ -41,7 +41,6 @@
 ## まずやること
 1. このディレクトリを Claude Code で開く。
 2. `CLAUDE.md` を読む。
-3. `docs/想定テーマ10選.md` を読む。
 4. `docs/日本の国政調査ガイド.md` と `docs/運用ガイド.md` を読む。
 5. `/intake-source-batch <テーマ>` から始める。
 6. 収集後に `/collect-events <テーマ>`、`/link-events <テーマ>`、`/qa-event-db <テーマ>`、`/build-timeline-view <テーマ>` の順で進める。

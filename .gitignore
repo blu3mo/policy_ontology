@@ -1,0 +1,16 @@
+# ── テーマ別データ・成果物（大量のNDJSON・CSV・ビルド成果物） ──
+data/*/processed/
+outputs/*/
+
+# ── Node.js ──
+node_modules/
+dist/
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Editor ──
+*.swp
+*.swo
+*~
