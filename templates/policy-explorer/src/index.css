@@ -260,6 +260,14 @@ body {
 }
 
 /* ── Lane headers ──────────────────────────────────────────────── */
+.lane-headers-sticky {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  pointer-events: none;
+}
 .lane-header {
   position: absolute;
   top: 0;
@@ -545,34 +553,9 @@ body {
   transition: background 0.15s;
 }
 .detail-close:hover { background: #f1f5f9; }
-.detail-uncertainty-details {
-  margin-top: 4px;
-  font-size: 11px;
-}
-.detail-uncertainty-toggle {
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 11px;
-  user-select: none;
-  list-style: none;
-}
-.detail-uncertainty-toggle::before {
-  content: '▸ ';
-  font-size: 9px;
-}
-.detail-uncertainty-details[open] .detail-uncertainty-toggle::before {
-  content: '▾ ';
-}
-.detail-uncertainty-toggle::-webkit-details-marker {
-  display: none;
-}
 .detail-uncertainty {
   font-size: 11px;
   color: var(--text-muted);
-  background: #f8fafc;
-  border-radius: 4px;
-  padding: 6px 8px;
-  margin-top: 4px;
   line-height: 1.5;
 }
 
