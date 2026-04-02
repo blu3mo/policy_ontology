@@ -245,9 +245,12 @@ export default function TimelineViz({
           const isHighlighted = hoveredId === node.id;
           const isFocused = focusNodes?.includes(node.id);
           const isSelected = selectedId === node.id;
+          const hasFocusNodes = focusNodes && focusNodes.length > 0;
+          const isDefocused = hasFocusNodes && !isFocused && !isHighlighted && !isSelected && !isDimmed;
 
           let cls = `event-node ${node.tier}`;
           if (isDimmed) cls += ' dimmed';
+          else if (isDefocused) cls += ' defocused';
           if (isHighlighted || isSelected) cls += ' highlighted';
           else if (isFocused) cls += ' focused';
 
