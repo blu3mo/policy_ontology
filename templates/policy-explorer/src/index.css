@@ -362,8 +362,8 @@ body {
   opacity: 0.08;
 }
 .event-node.defocused {
-  opacity: 0.7;
-  filter: saturate(0.6);
+  opacity: 0.9;
+  filter: saturate(0.9);
 }
 .event-node.highlighted {
   z-index: 30;
