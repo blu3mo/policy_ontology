@@ -7,14 +7,14 @@ import config from './data/config.js';
 import networkData from './data/network.js';
 import {
   layout,
-  CANVAS_HEIGHT,
+  ACTUAL_BANDS,
+  ACTUAL_CANVAS_HEIGHT,
   CANVAS_WIDTH,
   CARD_SIZES,
   DOMAIN_COLORS,
   LANE_CENTERS,
   EDGE_COLORS,
   RELATION_PRIORITY,
-  Y_OFFSETS,
   YEARS,
   YEAR_START,
   YEAR_END,
@@ -22,7 +22,9 @@ import {
   dateToYear,
 } from './data/layout.js';
 
-const VIEWPORT_HEIGHT_OFFSET = 52; // header height
+const VIEWPORT_HEIGHT_OFFSET = 52; // header height (desktop)
+const MOBILE_BREAKPOINT = 640;
+const MOBILE_HEADER_H = 44;
 
 // ── Tooltip component ──────────────────────────────────────────────────────
 function Tooltip({ node, mouseX, mouseY }) {
@@ -70,10 +72,12 @@ function MiniBar({ viewOffset, canvasHeight, viewportH }) {
 
 // ── Explore Mode Overlay ────────────────────────────────────────────────────
 function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) {
+  const isMobInit = window.innerWidth <= MOBILE_BREAKPOINT;
+  const defaultScale = isMobInit ? Math.min(0.95, window.innerWidth / CANVAS_WIDTH) : 0.72;
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(0.72);
+  const [scale, setScale] = useState(defaultScale);
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
@@ -82,16 +86,17 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const wrapRef = useRef(null);
   // Refs to read current values inside stable callbacks
-  const scaleRef = useRef(0.72);
+  const scaleRef = useRef(defaultScale);
   const offsetRef = useRef({ x: 0, y: 0 });
   useEffect(() => { scaleRef.current = scale; }, [scale]);
   useEffect(() => { offsetRef.current = offset; }, [offset]);
 
   // On mount: center on initialNode, or default to most recent event
   useEffect(() => {
-    const targetScale = 0.72;
+    const targetScale = scaleRef.current;
     const viewW = window.innerWidth;
-    const viewH = window.innerHeight - 52;
+    const headerH = window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_HEADER_H : 52;
+    const viewH = window.innerHeight - headerH;
 
     if (initialNodeId) {
       const node = layout.nodeMap[initialNodeId];
@@ -210,7 +215,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
   const zoomBy = useCallback((factor) => {
     const viewW = window.innerWidth;
-    const viewH = window.innerHeight - 52;
+    const viewH = window.innerHeight - (window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_HEADER_H : 52);
     const cx = viewW / 2;
     const cy = viewH / 2;
     const prevScale = scaleRef.current;
@@ -295,21 +300,20 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
           className="explore-canvas"
           style={{
             width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
+            height: ACTUAL_CANVAS_HEIGHT,
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
           }}
         >
           {/* Year bands + labels */}
           {YEARS.map(year => {
-            const y = Y_OFFSETS[year];
-            const bandH = Y_OFFSETS[year + 1] - y;
+            const { start, end } = ACTUAL_BANDS[year];
             return (
               <React.Fragment key={year}>
                 <div
                   className={`year-band ${year % 2 === 0 ? 'even' : 'odd'}`}
-                  style={{ top: y, height: bandH }}
+                  style={{ top: start, height: end - start }}
                 />
-                <div className="year-label" style={{ top: y + 4 }}>{year}</div>
+                <div className="year-label" style={{ top: start + 4 }}>{year}</div>
               </React.Fragment>
             );
           })}
@@ -327,7 +331,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
           {/* Edges */}
           <svg
-            style={{ position: 'absolute', top: 0, left: 0, width: CANVAS_WIDTH, height: CANVAS_HEIGHT, pointerEvents: 'none', zIndex: 3 }}
+            style={{ position: 'absolute', top: 0, left: 0, width: CANVAS_WIDTH, height: ACTUAL_CANVAS_HEIGHT, pointerEvents: 'none', zIndex: 3 }}
           >
             <defs>
               {[1,2,3,4,5].map(pri => (
@@ -438,9 +442,14 @@ export default function App() {
   const [hoveredNode, setHoveredNode] = useState(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [selectedNode, setSelectedNode] = useState(null);
-  const [viewportH, setViewportH] = useState(window.innerHeight - VIEWPORT_HEIGHT_OFFSET);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
+  const [viewportH, setViewportH] = useState(
+    window.innerHeight - (window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_HEADER_H : VIEWPORT_HEIGHT_OFFSET)
+  );
   const [pendingEventId, setPendingEventId] = useState(null);
   const [expandedSteps, setExpandedSteps] = useState(new Set());
+
+  const mobileScale = isMobile ? Math.min(1, window.innerWidth / CANVAS_WIDTH) : 1;
 
   const stepRefs = useRef([]);
   const heroRef = useRef(null);
@@ -464,6 +473,7 @@ export default function App() {
 
   // Camera position: center on timeCenter, then nudge to ensure focusNodes are visible
   // Summary steps (no focusNodes + no revealNodes) keep the previous view position.
+  // On mobile the timeline is scaled down, so we use effectiveVH (original-coord viewport height).
   const viewOffset = useMemo(() => {
     const step = narrativeSteps[activeStep];
     if (!step?.timeCenter) return prevViewOffsetRef.current;
@@ -472,8 +482,9 @@ export default function App() {
       && (!step.revealNodes || step.revealNodes.length === 0);
     if (isSummaryStep) return prevViewOffsetRef.current;
 
+    const effectiveVH = mobileScale !== 1 ? viewportH / mobileScale : viewportH;
     const y = yearToY(step.timeCenter);
-    let target = y - viewportH / 2;
+    let target = y - effectiveVH / 2;
 
     // Ensure focusNodes (not all revealNodes) are in viewport — they are few and close together
     const focusYs = (step.focusNodes || [])
@@ -486,13 +497,13 @@ export default function App() {
       const minFocusY = Math.min(...focusYs);
       const maxFocusY = Math.max(...focusYs);
       if (minFocusY < target + pad) target = minFocusY - pad;
-      if (maxFocusY > target + viewportH - pad) target = maxFocusY - viewportH + pad;
+      if (maxFocusY > target + effectiveVH - pad) target = maxFocusY - effectiveVH + pad;
     }
 
-    const result = Math.max(0, Math.min(target, CANVAS_HEIGHT - viewportH));
+    const result = Math.max(0, Math.min(target, ACTUAL_CANVAS_HEIGHT - effectiveVH));
     prevViewOffsetRef.current = result;
     return result;
-  }, [activeStep, viewportH]);
+  }, [activeStep, viewportH, mobileScale]);
 
   // IntersectionObserver for scroll steps
   useEffect(() => {
@@ -516,7 +527,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handle = () => setViewportH(window.innerHeight - VIEWPORT_HEIGHT_OFFSET);
+    const handle = () => {
+      const mob = window.innerWidth <= MOBILE_BREAKPOINT;
+      setIsMobile(mob);
+      setViewportH(window.innerHeight - (mob ? MOBILE_HEADER_H : VIEWPORT_HEIGHT_OFFSET));
+    };
     window.addEventListener('resize', handle);
     return () => window.removeEventListener('resize', handle);
   }, []);
@@ -615,8 +630,9 @@ export default function App() {
             }}
             narrativeMode={true}
             showEdgesForStep={currentStep?.showEdges || false}
+            mobileScale={mobileScale}
           />
-          <MiniBar viewOffset={viewOffset} canvasHeight={CANVAS_HEIGHT} viewportH={viewportH} />
+          <MiniBar viewOffset={viewOffset} canvasHeight={ACTUAL_CANVAS_HEIGHT} viewportH={viewportH} />
         </div>
 
         {/* Scroll steps */}
@@ -647,7 +663,7 @@ export default function App() {
                 <h3>{step.title}</h3>
                 <div className="step-subtitle">{step.subtitle}</div>
                 {(() => {
-                  const MAX_BODY = 280;
+                  const MAX_BODY = 364;
                   const isLong = step.body.length > MAX_BODY;
                   const isExpanded = expandedSteps.has(step.id);
                   const displayBody = isLong && !isExpanded ? step.body.slice(0, MAX_BODY) + '…' : step.body;
