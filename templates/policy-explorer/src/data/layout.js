@@ -142,8 +142,10 @@ function buildYOffsets() {
   }
   return offsets;
 }
-export const Y_OFFSETS = buildYOffsets();
-export const CANVAS_HEIGHT = Y_OFFSETS[YEAR_END + 1] + 80;
+// Internal use only — for initial node Y estimation in computeLayout().
+// For rendering, use ACTUAL_BANDS / ACTUAL_CANVAS_HEIGHT (exported below).
+const Y_OFFSETS = buildYOffsets();
+const CANVAS_HEIGHT = Y_OFFSETS[YEAR_END + 1] + 80;
 
 // ── Year → Y pixel on canvas ───────────────────────────────────────────────
 export function yearToY(decimalYear) {
@@ -192,24 +194,54 @@ export function computeLayout() {
     };
   });
 
-  // Per-lane overlap resolution
+  // ── Phase 1: Year-by-year layout with cross-year floor propagation ──────────
+  // Process each year: shift all its nodes uniformly when previous-year overflow
+  // pushes the floor up, then resolve per-lane overlaps within the year.
+  // This preserves within-year date spacing (Jan vs Mar stay separated) even
+  // when a dense year pushes subsequent years downward.
+  const lastLaneY = { 0: 0, 1: 0, 2: 0 };
+  let yearFloor = 0;
+  const yearActualStarts = {};
+
+  for (const yr of YEARS) {
+    const nodesInYear = positioned
+      .filter(n => n.decYear !== null && Math.floor(n.decYear) === yr)
+      .sort((a, b) => a.decYear - b.decYear);
+
+    const naturalYearStart = Y_OFFSETS[yr];
+    const actualYearStart = Math.max(naturalYearStart, yearFloor);
+    yearActualStarts[yr] = actualYearStart;
+
+    if (nodesInYear.length > 0) {
+      // Shift all nodes uniformly so the year's content starts at actualYearStart
+      const shift = actualYearStart - naturalYearStart;
+      nodesInYear.forEach(n => { n.y += shift; });
+
+      // Per-lane overlap + cross-lane ordering within this year (sorted by date).
+      // inYearFloor ensures: if date(A) < date(B) then A.y <= B.y across lanes.
+      let inYearFloor = 0;
+      nodesInYear.forEach(node => {
+        const lane = node.laneIdx;
+        node.y = Math.max(node.y, lastLaneY[lane], inYearFloor);
+        lastLaneY[lane] = node.y + node.h + MIN_GAP;
+        inYearFloor = Math.max(inYearFloor, node.y);
+      });
+
+      // Propagate floor to next year (use same 16px pad as buildActualBands)
+      const maxBottom = Math.max(...nodesInYear.map(n => n.y + n.h));
+      yearFloor = Math.max(Y_OFFSETS[yr + 1] ?? 0, maxBottom + 16);
+    } else {
+      yearFloor = Math.max(yearFloor, Y_OFFSETS[yr + 1] ?? 0);
+    }
+  }
+
+  // ── Phase 2: Per-lane x-axis zigzag within vertical clusters ────────────────
   const lanes = [0, 1, 2];
   lanes.forEach(laneIdx => {
     const inLane = positioned
       .filter(n => n.laneIdx === laneIdx)
       .sort((a, b) => a.y - b.y);
 
-    // Phase 1: push down
-    for (let i = 1; i < inLane.length; i++) {
-      const prev = inLane[i - 1];
-      const curr = inLane[i];
-      const minY = prev.y + prev.h + MIN_GAP;
-      if (curr.y < minY) {
-        curr.y = minY;
-      }
-    }
-
-    // Phase 2: x-axis zigzag within clusters
     const clusterThresh = 90; // px
     let i = 0;
     while (i < inLane.length) {
@@ -250,7 +282,42 @@ export function computeLayout() {
     return { ...e, priority };
   });
 
-  return { nodes: positioned, nodeMap, edges: processedEdges };
+  return { nodes: positioned, nodeMap, edges: processedEdges, yearActualStarts };
 }
 
 export const layout = computeLayout();
+
+// ── Actual year-band extents (post-layout) ─────────────────────────────────
+// buildYOffsets() estimates year heights per-lane independently, but the
+// global-floor pass can push nodes past the estimated boundaries.
+// Recompute band start/end from actual node positions so the visual stripes
+// tightly wrap their cards.
+function buildActualBands() {
+  const yearBottoms = {};
+  layout.nodes.forEach(node => {
+    if (node.decYear === null) return;
+    const yr = Math.floor(node.decYear);
+    const bottom = node.y + node.h;
+    if (yearBottoms[yr] === undefined || bottom > yearBottoms[yr]) {
+      yearBottoms[yr] = bottom;
+    }
+  });
+
+  const bands = {};
+  let cursor = CANVAS_TOP_PAD;
+  for (const yr of YEARS) {
+    // Use the layout's actual year start (same value used when positioning nodes)
+    // so band boundaries align exactly with node positions.
+    const start = Math.max(layout.yearActualStarts?.[yr] ?? cursor, cursor);
+    const end = Math.max(
+      start + PX_PER_YEAR,              // enforce minimum band height
+      (yearBottoms[yr] ?? start) + 16   // cover actual last card bottom + pad
+    );
+    bands[yr] = { start, end };
+    cursor = end;
+  }
+  return bands;
+}
+export const ACTUAL_BANDS = buildActualBands();
+export const ACTUAL_CANVAS_HEIGHT =
+  (ACTUAL_BANDS[YEARS[YEARS.length - 1]]?.end ?? CANVAS_HEIGHT) + 80;

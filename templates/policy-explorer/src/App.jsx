@@ -7,14 +7,14 @@ import config from './data/config.js';
 import networkData from './data/network.js';
 import {
   layout,
-  CANVAS_HEIGHT,
+  ACTUAL_BANDS,
+  ACTUAL_CANVAS_HEIGHT,
   CANVAS_WIDTH,
   CARD_SIZES,
   DOMAIN_COLORS,
   LANE_CENTERS,
   EDGE_COLORS,
   RELATION_PRIORITY,
-  Y_OFFSETS,
   YEARS,
   YEAR_START,
   YEAR_END,
@@ -295,21 +295,20 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
           className="explore-canvas"
           style={{
             width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
+            height: ACTUAL_CANVAS_HEIGHT,
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
           }}
         >
           {/* Year bands + labels */}
           {YEARS.map(year => {
-            const y = Y_OFFSETS[year];
-            const bandH = Y_OFFSETS[year + 1] - y;
+            const { start, end } = ACTUAL_BANDS[year];
             return (
               <React.Fragment key={year}>
                 <div
                   className={`year-band ${year % 2 === 0 ? 'even' : 'odd'}`}
-                  style={{ top: y, height: bandH }}
+                  style={{ top: start, height: end - start }}
                 />
-                <div className="year-label" style={{ top: y + 4 }}>{year}</div>
+                <div className="year-label" style={{ top: start + 4 }}>{year}</div>
               </React.Fragment>
             );
           })}
@@ -327,7 +326,7 @@ function ExploreMode({ onClose, onSelectNode, onNavigateToOrg, initialNodeId }) 
 
           {/* Edges */}
           <svg
-            style={{ position: 'absolute', top: 0, left: 0, width: CANVAS_WIDTH, height: CANVAS_HEIGHT, pointerEvents: 'none', zIndex: 3 }}
+            style={{ position: 'absolute', top: 0, left: 0, width: CANVAS_WIDTH, height: ACTUAL_CANVAS_HEIGHT, pointerEvents: 'none', zIndex: 3 }}
           >
             <defs>
               {[1,2,3,4,5].map(pri => (
@@ -489,7 +488,7 @@ export default function App() {
       if (maxFocusY > target + viewportH - pad) target = maxFocusY - viewportH + pad;
     }
 
-    const result = Math.max(0, Math.min(target, CANVAS_HEIGHT - viewportH));
+    const result = Math.max(0, Math.min(target, ACTUAL_CANVAS_HEIGHT - viewportH));
     prevViewOffsetRef.current = result;
     return result;
   }, [activeStep, viewportH]);
@@ -616,7 +615,7 @@ export default function App() {
             narrativeMode={true}
             showEdgesForStep={currentStep?.showEdges || false}
           />
-          <MiniBar viewOffset={viewOffset} canvasHeight={CANVAS_HEIGHT} viewportH={viewportH} />
+          <MiniBar viewOffset={viewOffset} canvasHeight={ACTUAL_CANVAS_HEIGHT} viewportH={viewportH} />
         </div>
 
         {/* Scroll steps */}
@@ -647,7 +646,7 @@ export default function App() {
                 <h3>{step.title}</h3>
                 <div className="step-subtitle">{step.subtitle}</div>
                 {(() => {
-                  const MAX_BODY = 280;
+                  const MAX_BODY = 364;
                   const isLong = step.body.length > MAX_BODY;
                   const isExpanded = expandedSteps.has(step.id);
                   const displayBody = isLong && !isExpanded ? step.body.slice(0, MAX_BODY) + '…' : step.body;

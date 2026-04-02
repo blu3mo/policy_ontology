@@ -2,14 +2,14 @@ import React, { useMemo, useRef } from 'react';
 import {
   layout,
   CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  Y_OFFSETS,
   YEARS,
   CARD_SIZES,
   DOMAIN_COLORS,
   LANE_CENTERS,
   EDGE_COLORS,
   RELATION_PRIORITY,
+  ACTUAL_BANDS,
+  ACTUAL_CANVAS_HEIGHT,
 } from './data/layout.js';
 
 function formatDateShort(dateStr) {
@@ -141,33 +141,29 @@ export default function TimelineViz({
         className="timeline-inner"
         style={{
           width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
+          height: ACTUAL_CANVAS_HEIGHT,
           transform: `translateY(${-viewOffset}px)`,
         }}
       >
         {/* Year bands */}
         {YEARS.map(year => {
-          const y = Y_OFFSETS[year];
-          const bandH = Y_OFFSETS[year + 1] - y;
+          const { start, end } = ACTUAL_BANDS[year];
           const isEven = year % 2 === 0;
           return (
             <div
               key={year}
               className={`year-band ${isEven ? 'even' : 'odd'}`}
-              style={{ top: y, height: bandH }}
+              style={{ top: start, height: end - start }}
             />
           );
         })}
 
         {/* Year labels */}
-        {YEARS.map(year => {
-          const y = Y_OFFSETS[year];
-          return (
-            <div key={`lbl-${year}`} className="year-label" style={{ top: y + 4 }}>
-              {year}
-            </div>
-          );
-        })}
+        {YEARS.map(year => (
+          <div key={`lbl-${year}`} className="year-label" style={{ top: ACTUAL_BANDS[year].start + 4 }}>
+            {year}
+          </div>
+        ))}
 
         {/* Lane headers (in-canvas, for explore mode) */}
         {!narrativeMode && Object.entries(DOMAIN_COLORS).map(([domain, info]) => {
@@ -193,7 +189,7 @@ export default function TimelineViz({
         <svg
           className="edges-bg"
           width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
+          height={ACTUAL_CANVAS_HEIGHT}
           style={{ pointerEvents: 'none' }}
         >
           <defs>
@@ -283,7 +279,7 @@ export default function TimelineViz({
         <svg
           className="edges-fg"
           width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
+          height={ACTUAL_CANVAS_HEIGHT}
           style={{ pointerEvents: 'none' }}
         >
           <defs>
