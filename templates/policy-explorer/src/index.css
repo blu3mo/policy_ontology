@@ -167,7 +167,9 @@ body {
 }
 .step-card.active {
   opacity: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.10),
+    0 12px 32px rgba(0,0,0,0.06);
 }
 .step-number {
   font-size: 10px;
@@ -260,6 +262,14 @@ body {
 }
 
 /* ── Lane headers ──────────────────────────────────────────────── */
+.lane-headers-sticky {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  pointer-events: none;
+}
 .lane-header {
   position: absolute;
   top: 0;
@@ -547,11 +557,7 @@ body {
 .detail-close:hover { background: #f1f5f9; }
 .detail-uncertainty {
   font-size: 11px;
-  color: #92400e;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: 4px;
-  padding: 7px 9px;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 

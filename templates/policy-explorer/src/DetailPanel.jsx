@@ -56,7 +56,7 @@ export default function DetailPanel({ node, onClose, onNavigate, onNavigateToOrg
 
         {node.notes_uncertainty && (
           <div className="detail-section">
-            <div className="detail-section-label">不確実性・注記</div>
+            <div className="detail-section-label" style={{ color: 'var(--text-muted)' }}>注記</div>
             <div className="detail-uncertainty">{node.notes_uncertainty}</div>
           </div>
         )}

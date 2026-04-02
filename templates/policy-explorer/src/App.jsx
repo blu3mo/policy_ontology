@@ -528,6 +528,13 @@ export default function App() {
     }
   }, [viewMode]);
 
+  // In story mode, close detail panel and clear focus when step changes via scroll
+  useEffect(() => {
+    if (viewMode === 'story') {
+      setSelectedNode(null);
+    }
+  }, [activeStep]);
+
   const handleNodeHover = useCallback((id, e) => {
     setHoveredId(id);
     if (id) {

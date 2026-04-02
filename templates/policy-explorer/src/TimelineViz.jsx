@@ -114,6 +114,29 @@ export default function TimelineViz({
 
   return (
     <div className="timeline-container">
+      {/* Sticky lane headers (outside scrolling inner) */}
+      {narrativeMode && (
+        <div className="lane-headers-sticky">
+          {Object.entries(DOMAIN_COLORS).map(([domain, info]) => {
+            const x = LANE_CENTERS[info.lane];
+            return (
+              <div
+                key={domain}
+                className="lane-header"
+                style={{
+                  left: x,
+                  background: info.bg,
+                  color: info.border,
+                  border: `1px solid ${info.border}33`,
+                }}
+              >
+                {domain}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div
         className="timeline-inner"
         style={{
@@ -146,8 +169,8 @@ export default function TimelineViz({
           );
         })}
 
-        {/* Lane headers */}
-        {Object.entries(DOMAIN_COLORS).map(([domain, info]) => {
+        {/* Lane headers (in-canvas, for explore mode) */}
+        {!narrativeMode && Object.entries(DOMAIN_COLORS).map(([domain, info]) => {
           const x = LANE_CENTERS[info.lane];
           return (
             <div
