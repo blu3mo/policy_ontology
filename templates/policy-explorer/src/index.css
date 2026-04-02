@@ -157,8 +157,7 @@ body {
   pointer-events: auto;
   background: #ffffff;
   border: none;
-  border-radius: 10px;
-  border-left: 3px solid #cbd5e1;
+  border-radius: 2px;
   padding: 28px 28px 24px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   backdrop-filter: blur(12px);
@@ -168,7 +167,6 @@ body {
 }
 .step-card.active {
   opacity: 1;
-  border-left-color: #2563eb;
   box-shadow:
     0 4px 16px rgba(0,0,0,0.10),
     0 12px 32px rgba(0,0,0,0.06);
