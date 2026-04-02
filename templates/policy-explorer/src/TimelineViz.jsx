@@ -34,6 +34,7 @@ export default function TimelineViz({
   narrativeMode,
   showEdgesForStep,
   viewportHeight,
+  mobileScale = 1,
 }) {
   const svgRef = useRef(null);
 
@@ -118,7 +119,7 @@ export default function TimelineViz({
       {narrativeMode && (
         <div className="lane-headers-sticky">
           {Object.entries(DOMAIN_COLORS).map(([domain, info]) => {
-            const x = LANE_CENTERS[info.lane];
+            const x = LANE_CENTERS[info.lane] * mobileScale;
             return (
               <div
                 key={domain}
@@ -137,6 +138,15 @@ export default function TimelineViz({
         </div>
       )}
 
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          transformOrigin: 'top left',
+          transform: mobileScale !== 1 ? `scale(${mobileScale})` : undefined,
+        }}
+      >
       <div
         className="timeline-inner"
         style={{
@@ -312,6 +322,7 @@ export default function TimelineViz({
             />
           ))}
         </svg>
+      </div>
       </div>
     </div>
   );

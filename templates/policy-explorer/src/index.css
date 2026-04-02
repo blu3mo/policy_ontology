@@ -1451,3 +1451,186 @@ body {
   margin-top: 1px;
   white-space: nowrap;
 }
+
+/* ── Mobile responsive (≤ 640px) ──────────────────────────────── */
+@media (max-width: 640px) {
+  /* Header: compact */
+  .app-header {
+    padding: 0 10px;
+    height: 44px;
+  }
+  .app-header h1 {
+    font-size: 12px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-header .subtitle {
+    display: none;
+  }
+  .mode-toggle {
+    flex-shrink: 0;
+  }
+  .mode-toggle-btn {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  /* Sticky viz: adjust top for 44px mobile header */
+  .sticky-viz {
+    top: 44px;
+  }
+
+  /* Scroll steps: full-width bottom-sheet */
+  .scroll-steps {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: calc(-1 * (100vh - 44px));
+    padding-bottom: 20vh;
+  }
+  .scroll-step {
+    min-height: 80vh;
+    align-items: flex-end;
+    padding: 0;
+  }
+  .step-card {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 14px 16px 20px;
+    max-height: 42vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12), 0 -1px 6px rgba(0,0,0,0.06);
+    opacity: 0.95;
+  }
+  .step-card.active {
+    opacity: 1;
+  }
+  .step-card h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .step-card .step-subtitle {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .step-card p {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .step-progress {
+    display: none;
+  }
+
+  /* Hero screen: bottom-sheet */
+  .scroll-hero {
+    min-height: 80vh;
+    align-items: flex-end;
+    padding: 0;
+  }
+  .hero-card {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px 24px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12), 0 -1px 6px rgba(0,0,0,0.06);
+  }
+  .hero-title {
+    font-size: 17px;
+  }
+
+  /* Hide mini position bar on mobile */
+  .mini-bar {
+    display: none;
+  }
+
+  /* Lane headers: compact */
+  .lane-headers-sticky .lane-header {
+    font-size: 8px;
+    padding: 2px 5px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Detail panel: bottom-sheet on mobile */
+  .detail-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 70vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .detail-panel.open {
+    transform: translateY(0);
+  }
+
+  /* Explore mode */
+  .explore-overlay {
+    top: 44px;
+  }
+  .explore-header {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .explore-header h2 {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .explore-search {
+    min-width: unset;
+    width: 100%;
+    order: 3;
+  }
+  .explore-filter-chips {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    order: 4;
+  }
+  .explore-legend {
+    display: none;
+  }
+  .explore-zoom-controls {
+    bottom: 12px;
+    right: 12px;
+  }
+  .zoom-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  /* OrgNetwork overlay */
+  .orgnet-overlay {
+    top: 44px;
+  }
+  .orgnet-body {
+    flex-direction: column;
+  }
+  .orgnet-canvas-container.orgnet-with-panel {
+    flex: 0 0 45%;
+  }
+  .orgnet-panel.open {
+    width: 100%;
+    flex: 0 0 55%;
+  }
+  .orgnet-panel-inner {
+    width: 100vw;
+    min-width: unset;
+  }
+  .orgnet-legend-bar {
+    padding: 6px 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .orgnet-time-filter {
+    min-width: 130px;
+  }
+}
