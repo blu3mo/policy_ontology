@@ -378,15 +378,13 @@ export default narrativeSteps;
 
 ## データ量の下限基準
 
-過去テーマの実績平均×1.5を下限とする。生成時にこの数を下回っている場合、上流パイプライン（/intake-source-batch → /collect-events → /link-events）に戻ってリサーチを繰り返し、深め・広げてからやり直す。
+下記を下回る場合は、上流パイプライン（/intake-source-batch → /collect-events → /link-events）に戻ってリサーチを繰り返し、深め・広げてからやり直す。
 
-| 項目 | 下限 | 対象ファイル |
-|---|---|---|
-| **イベント数**（graph.js の nodes） | **85** | graph.js |
-| **リンク数**（graph.js の edges） | **125** | graph.js |
-| **資料エントリ数**（sourceLinks.js の全エントリ合計） | **100** | sourceLinks.js |
-
-- 下限はあくまで「これ以下なら調査が浅い可能性が高い」というガードレール。テーマの性質上イベントが少ない場合（極めて狭い技術論点など）は、理由を明記した上で下限を下回ってもよい。
+| 項目 | 下限 |
+|---|---|
+| イベント数（graph.js の nodes） | 85 |
+| リンク数（graph.js の edges） | 125 |
+| 資料エントリ数（sourceLinks.js の全エントリ合計） | 100 |
 
 ## ビルド手順（厳守）
 
