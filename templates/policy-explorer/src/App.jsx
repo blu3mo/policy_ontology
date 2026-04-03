@@ -629,7 +629,7 @@ export default function App() {
               setSelectedNode(prev => prev?.id === n.id ? null : n);
             }}
             narrativeMode={true}
-            showEdgesForStep={currentStep?.showEdges || false}
+            showEdgesForStep={currentStep?.showEdges || activeStep === narrativeSteps.length - 1}
             mobileScale={mobileScale}
           />
           <MiniBar viewOffset={viewOffset} canvasHeight={ACTUAL_CANVAS_HEIGHT} viewportH={viewportH} />

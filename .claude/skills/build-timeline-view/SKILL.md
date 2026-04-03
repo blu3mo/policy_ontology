@@ -197,59 +197,74 @@ export default sourceLinks;
 
 アクターネットワーク（主体間の共起関係）のデータ。events.ndjson + entities.ndjson から生成する。
 
+**networkData は以下の5つのトップレベルキーを全て持たなければならない。1つでも欠けるとアクタービューがクラッシュする。**
+
 ```js
 const networkData = {
+  // ── 1. orgNodes（必須）────────────────────────────────────────
   orgNodes: [
-    // 組織ノード
     {
-      id: "法務省",              // 正規化された短い名前
-      label: "法務省",
-      group: "政府",             // "政府" | "業界" | "国際" | "専門家" | "人物" | "その他"
-      event_count: 13,
-      event_ids: ["XX-EV-001", ...]
-    },
-    // 人物ノード（graph.js の people フィールドから生成）
-    {
-      id: "山田太郎",
-      label: "山田太郎",
-      group: "人物",             // 人物は必ず "人物"
-      event_count: 3,
-      event_ids: ["XX-EV-005", ...]
+      id: "法務省",              // 必須: 正規化された短い名前
+      label: "法務省",           // 必須: 表示名。フィールド名は "label"（"name" ではない）
+      group: "政府",             // 必須: "政府" | "業界" | "国際" | "専門家" | "人物" | "その他"
+      event_count: 13,           // 必須: event_ids.length と一致
+      event_ids: ["XX-EV-001"]   // 必須: このアクターが関与するイベントID配列
     },
     ...
   ],
+
+  // ── 2. orgEdges（必須）────────────────────────────────────────
   orgEdges: [
-    // 組織-組織、組織-人物、人物-人物の共起エッジ（同一イベントに登場した関係）
     {
-      source: "法務省",
-      target: "法制審議会",
-      weight: 5,                 // 共有イベント数
-      shared_events: ["XX-EV-011", ...]
-    },
-    {
-      source: "山田太郎",
-      target: "法務省",
-      weight: 3,
-      shared_events: ["XX-EV-005", ...]
+      source: "法務省",          // 必須: orgNodes の id
+      target: "法制審議会",      // 必須: orgNodes の id
+      weight: 5,                 // 必須: shared_events.length と一致
+      shared_events: ["XX-EV-011", ...]  // 必須: 共有イベントID配列
     },
     ...
   ],
+
+  // ── 3. eventNodes（必須）──────────────────────────────────────
+  // graph.js の nodes から転写。省略するとノード選択時にクラッシュする。
   eventNodes: [
-    // graph.js の nodes と同じ構造（重複OK）
-    { id, label, date, date_text, domain, summary, organizations, people, confidence }
+    {
+      id: "XX-EV-001",           // 必須
+      label: "イベントタイトル", // 必須
+      date: "2022-04-27",        // 必須（ソートと時間フィルタに使用）
+      date_text: "2022年4月27日",
+      domain: "公式制度過程",    // 必須（ドット色に使用）
+      summary: "要約...",
+      organizations: ["法務省"],
+      people: [],
+      confidence: 0.95
+    },
+    ...
   ],
+
+  // ── 4. sourceLinks（必須）─────────────────────────────────────
+  // sourceLinks.js と同内容。省略するとイベント展開時にクラッシュする。
   sourceLinks: {
-    "XX-EV-001": [{ source_id, source_title, source_url, why_relevant, evidence_snippet }], ...
+    "XX-EV-001": [
+      { source_id: "SRC-010", source_title: "資料名", source_url: "https://...",
+        why_relevant: "...", evidence_snippet: "..." }
+    ],
+    ...
   },
+
+  // ── 5. orgNameMap（必須）──────────────────────────────────────
   orgNameMap: {
-    // graph.js の長い組織名・人物名 → network.js の正規化名
-    "株式会社トレードワルツ（貿易コンソーシアム）": "TradeWaltz（貿易コンソーシアム）",
     "法制審議会商法（船荷証券等関係）部会": "法制審議会",
     ...
   }
 };
 export default networkData;
 ```
+
+**生成後のセルフチェック（必ず実行）**:
+1. `networkData` のトップレベルキーが `orgNodes`, `orgEdges`, `eventNodes`, `sourceLinks`, `orgNameMap` の5つ全て存在するか
+2. orgNodes の各要素に `label`（`name` ではない）フィールドがあるか
+3. orgNodes の各 `event_ids` に含まれるIDが `eventNodes` に存在するか
+4. orgEdges の `shared_events` に含まれるIDが `eventNodes` に存在するか
 
 **orgNameMap**: graph.js（タイムライン）の組織名・人物名と network.js の正規化名を結ぶマッピング。DetailPanel の「アクター関係図で見る」クリック時にこのマップで名前を変換する。組織だけでなく人物名の表記揺れも含める。
 
@@ -360,6 +375,18 @@ export default narrativeSteps;
 - `focusNodes`: そのステップで最も重要な1〜2個。エッジはfocusNodes接続のみ表示。
 - `timeCenter`: focusNodesの中央付近の時期。小数年（例: 2022.8 = 2022年10月頃）。**要約ステップ（focusNodes・revealNodes が空のまとめ的ステップ）では `null` に設定する**。`null` の場合、タイムラインは前ステップの表示位置を維持する。
 - `body`: 読者が「なるほど、だからこうなったのか」と因果を理解できる文章。200〜400字。改行（\n\n）で段落を分ける。
+
+## データ量の下限基準
+
+過去テーマの実績平均×1.5を下限とする。生成時にこの数を下回っている場合、上流パイプライン（/intake-source-batch → /collect-events → /link-events）に戻ってリサーチを繰り返し、深め・広げてからやり直す。
+
+| 項目 | 下限 | 対象ファイル |
+|---|---|---|
+| **イベント数**（graph.js の nodes） | **85** | graph.js |
+| **リンク数**（graph.js の edges） | **125** | graph.js |
+| **資料エントリ数**（sourceLinks.js の全エントリ合計） | **100** | sourceLinks.js |
+
+- 下限はあくまで「これ以下なら調査が浅い可能性が高い」というガードレール。テーマの性質上イベントが少ない場合（極めて狭い技術論点など）は、理由を明記した上で下限を下回ってもよい。
 
 ## ビルド手順（厳守）
 
